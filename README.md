@@ -14,7 +14,7 @@ person och körs lokalt.
 | 3 | AI-ifyllning, etikettfoto, streckkodsskanning | Klar |
 | 4 | Smakprofil-AI och önskelista | Klar |
 | 5 | Vinprovning | Klar |
-| 6 | Statistik, export och import | |
+| 6 | Statistik, export och import | Klar |
 | 7 | PWA/offline och slutputs | |
 
 ## Kom igång
@@ -74,6 +74,17 @@ Konventioner:
 2. Byt adaptern i `lib/db.ts` mot `@prisma/adapter-pg`.
 3. Peka `DATABASE_URL` mot den nya databasen.
 4. Kör `npm run db:migrate`.
+
+## Statistik och säkerhetskopior
+
+- **Statistik** (`/statistik`): samlingens värde (inköpspris, annars uppskattat pris), flaskor per
+  kategori, snittbetyg per druva och land, mest prisvärda (betygspoäng per 100 kr) och vad som bör drickas snart.
+- **Export** (`/mer/backup`): en JSON-säkerhetskopia med allt ditt (flaskor, betyg, önskelista,
+  provningar, analyser, foton och de katalogdrycker de pekar på), plus samlingen och historiken som CSV
+  (semikolon och decimalkomma, öppnas direkt i svenska Excel).
+- **Import:** JSON läses in med "slå ihop" (uppdaterar på id, inga dubbletter) eller "ersätt" (tömmer
+  dina egna data först; katalogen behålls). En CSV med samma kolumner som exporten läses in rad för rad,
+  och rader som inte går igenom valideringen rapporteras.
 
 ## Katalogimport
 

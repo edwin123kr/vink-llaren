@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 const RADER: { icon: IconName; title: string; text: string; fas: number; href?: string }[] = [
   { icon: "hjarta", title: "Önskelista", text: "Flaskor du vill köpa", fas: 4, href: "/onskelista" },
   { icon: "bok", title: "Historik", text: "Alla betyg, senast först", fas: 2, href: "/historik" },
-  { icon: "stapel", title: "Statistik", text: "Värde, snittbetyg och mest prisvärda", fas: 6 },
-  { icon: "export", title: "Export och import", text: "Säkerhetskopia som JSON eller CSV", fas: 6 },
+  { icon: "stapel", title: "Statistik", text: "Värde, snittbetyg och mest prisvärda", fas: 6, href: "/statistik" },
+  { icon: "export", title: "Export och import", text: "Säkerhetskopia som JSON eller CSV", fas: 6, href: "/mer/backup" },
   { icon: "bok", title: "Källor och licenser", text: "X-Wines (CC0) och Open Food Facts (ODbL)", fas: 1, href: "/mer/kallor" },
 ];
 

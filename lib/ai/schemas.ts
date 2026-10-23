@@ -1,0 +1,28 @@
+import { z } from "zod";
+import { KATEGORI_IDS } from "@/lib/kategorier";
+
+const smak = z.number().int().min(0).max(12).nullable().describe("0–12, som Systembolagets smakklockor. null om okänt.");
+
+/** Det Claude fyller i om en dryck (vid AI-ifyllning och etikettfoto). */
+export const DryckForslag = z.object({
+  namn: z.string().describe("Produktnamn utan producent"),
+  producent: z.string().nullable(),
+  kategori: z.enum(KATEGORI_IDS),
+  druvor: z.array(z.string()).describe("Druvor för vin, råvara för sprit (t.ex. 'mältat korn', 'blå agave')"),
+  land: z.string().nullable().describe("På svenska, t.ex. 'Italien'"),
+  region: z.string().nullable(),
+  argang: z.number().int().nullable(),
+  alkoholhalt: z.number().nullable().describe("Procent"),
+  volymMl: z.number().int().nullable(),
+  fyllighet: smak,
+  sotma: smak,
+  syra: smak,
+  stravhet: smak,
+  rokighet: smak,
+  aromer: z.array(z.string()).describe("3–8 dofter/aromer på svenska"),
+  mat: z.array(z.string()).describe("2–5 matrekommendationer på svenska"),
+  beskrivning: z.string().describe("2–3 meningar på svenska"),
+  prisCa: z.number().int().nullable().describe("Ungefärligt pris i svenska kronor, eller null om du inte vet"),
+  sakerhet: z.enum(["hog", "medel", "lag"]).describe("Hur säker identifieringen och uppgifterna är"),
+});
+export type DryckForslag = z.infer<typeof DryckForslag>;

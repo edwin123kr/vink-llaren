@@ -1,0 +1,132 @@
+// Vinkällaren — datamodell
+// Listor (druvor, aromer, mat) lagras som JSON-arrayer av strängar.
+// Smakprofilen använder skalan 0–12 (som Systembolagets smakklockor).
+// Betyg lagras i tiondelar: 78 = 7,8.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// Katalogen: en dryck oavsett om du äger den eller inte.
+model Dryck {
+  id             String   @id @default(cuid())
+  namn           String
+  producent      String?
+  typ            String // "vin" | "sprit"
+  kategori       String // se lib/kategorier.ts
+  druvor         Json? // string[]: druvor för vin, råvara för sprit
+  land           String?
+  region         String?
+  argang         Int?
+  alkoholhalt    Float? // procent
+  volymMl        Int?
+  fyllighet      Int? // 0–12
+  sotma          Int? // 0–12
+  syra           Int? // 0–12
+  stravhet       Int? // 0–12, tanniner/strävhet
+  rokighet       Int? // 0–12, främst sprit
+  aromer         Json? // string[]
+  mat            Json? // string[]
+  beskrivning    String?
+  bildUrl        String?
+  ean            String?  @unique
+  sbArtikelnr    String? // Systembolagets artikelnummer, fylls i manuellt
+  prisCa         Int? // kronor
+  prisUppskattat Boolean  @default(false)
+  kalla          String // "xwines" | "openfoodfacts" | "ai" | "manuell" | "demo"
+  kallaId        String?
+  licens         String? // t.ex. "CC0-1.0", "ODbL-1.0"
+  skapad         DateTime @default(now())
+  uppdaterad     DateTime @updatedAt
+
+  flaskor    Flaska[]
+  betyg      Betyg[]
+  onskningar Onskning[]
+
+  @@index([namn])
+  @@index([kategori])
+  @@index([producent, namn, argang])
+  @@index([kalla, kallaId])
+}
+
+/// En post i min samling.
+model Flaska {
+  id           String    @id @default(cuid())
+  dryckId      String
+  dryck        Dryck     @relation(fields: [dryckId], references: [id], onDelete: Cascade)
+  antal        Int       @default(1)
+  inkopspris   Int? // kronor per flaska
+  inkopsdatum  DateTime?
+  inkopsstalle String?
+  plats        String? // förvaringsplats, t.ex. "Källaren, hylla 2"
+  drickFran    Int? // år
+  drickTill    Int? // år
+  anteckningar String?
+  skapad       DateTime  @default(now())
+  uppdaterad   DateTime  @updatedAt
+
+  betyg Betyg[]
+
+  @@index([dryckId])
+}
+
+/// Betyg och historik. 0–100 tiondelar (0,0–10,0).
+model Betyg {
+  id         String    @id @default(cuid())
+  dryckId    String
+  dryck      Dryck     @relation(fields: [dryckId], references: [id], onDelete: Cascade)
+  flaskaId   String?
+  flaska     Flaska?   @relation(fields: [flaskaId], references: [id], onDelete: SetNull)
+  provningId String?
+  provning   Provning? @relation(fields: [provningId], references: [id], onDelete: SetNull)
+  betyg      Int
+  kommentar  String?
+  tillfalle  String? // tillfälle eller mat
+  datum      DateTime  @default(now())
+
+  @@index([dryckId])
+  @@index([datum])
+}
+
+/// Önskelista ("vill köpa"). Kan peka på en katalogdryck eller bara ha ett namn (t.ex. ett AI-förslag).
+model Onskning {
+  id         String   @id @default(cuid())
+  dryckId    String?
+  dryck      Dryck?   @relation(fields: [dryckId], references: [id], onDelete: SetNull)
+  namn       String
+  motivering String?
+  prisCa     Int?
+  kalla      String // "ai-rekommendation" | "manuell"
+  skapad     DateTime @default(now())
+}
+
+/// En planerad vinprovning med AI-förslaget sparat.
+model Provning {
+  id              String   @id @default(cuid())
+  titel           String
+  datum           DateTime?
+  deltagare       Int
+  antalViner      Int
+  budgetPerPerson Int
+  tema            String?
+  forslag         Json? // AI-resultatet
+  skapad          DateTime @default(now())
+
+  betyg Betyg[]
+}
+
+/// Sparade smakprofil-analyser (så att AI inte körs vid varje sidvisning).
+model Smakanalys {
+  id         String   @id @default(cuid())
+  typ        String // "vin" | "sprit"
+  antalBetyg Int
+  resultat   Json
+  skapad     DateTime @default(now())
+
+  @@index([typ, skapad])
+}

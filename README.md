@@ -10,7 +10,7 @@ person och körs lokalt.
 | --- | --- | --- |
 | 0 | Grund: datamodell, databas, designsystem, appskal, AI-lager med låtsasläge | Klar |
 | 1 | Katalog och importskript (X-Wines, Open Food Facts) | Klar |
-| 2 | Samlingen: lista, filter, detaljvy, lägga till, "Drack den" + betyg | |
+| 2 | Samlingen: lista, filter, detaljvy, lägga till, "Drack den" + betyg | Klar |
 | 3 | AI-ifyllning, etikettfoto, streckkodsskanning | |
 | 4 | Smakprofil-AI och önskelista | |
 | 5 | Vinprovning | |

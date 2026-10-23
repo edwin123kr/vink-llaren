@@ -4,11 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "./Icon";
 
-const ITEMS: { href: string; label: string; icon: IconName }[] = [
+const ITEMS: { href: string; label: string; icon: IconName; extra?: string }[] = [
   { href: "/", label: "Samling", icon: "samling" },
   { href: "/smakprofil", label: "Smakprofil", icon: "smak" },
   { href: "/provning", label: "Provning", icon: "glas" },
-  { href: "/mer", label: "Mer", icon: "mer" },
+  { href: "/mer", label: "Mer", icon: "mer", extra: " verktyg och inställningar" },
 ];
 
 function isActive(path: string, href: string) {
@@ -32,7 +32,7 @@ export function Nav() {
         }`}
       >
         <Icon name={i.icon} size={22} />
-        {i.label}
+        {i.label}{i.extra && <span className="sr-only">{i.extra}</span>}
       </Link>
     );
   };
@@ -58,7 +58,7 @@ export function Nav() {
                   }`}
                 >
                   <Icon name={i.icon} size={18} />
-                  {i.label}
+                  {i.label}{i.extra && <span className="sr-only">{i.extra}</span>}
                 </Link>
               );
             })}

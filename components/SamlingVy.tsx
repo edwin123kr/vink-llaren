@@ -219,7 +219,7 @@ export function SamlingVy({ rader }: { rader: SamlingRad[] }) {
                 </div>
                 <div className="flex flex-1 flex-col p-3">
                   <p className="eyebrow !text-[0.625rem]">{kat(r.dryck.kategori)?.namn}{r.dryck.argang ? ` · ${r.dryck.argang}` : ""}</p>
-                  <h3 className="display mt-0.5 line-clamp-2 text-lg leading-tight">{r.dryck.namn}</h3>
+                  <h2 className="display mt-0.5 line-clamp-2 text-lg leading-tight">{r.dryck.namn}</h2>
                   <p className="mt-auto pt-2 text-sm">
                     {r.snitt != null ? <span className="num text-gold">★ {betygText(r.snitt)}</span> : <span className="text-muted">Ej betygsatt</span>}
                   </p>
@@ -243,7 +243,7 @@ export function SamlingVy({ rader }: { rader: SamlingRad[] }) {
                       <p className="eyebrow !text-[0.6875rem]">{kat(r.dryck.kategori)?.namn}{r.dryck.argang ? ` · ${r.dryck.argang}` : ""}</p>
                       <span className="chip num shrink-0 !min-h-6" aria-label={`${r.antal} ${r.antal === 1 ? "flaska" : "flaskor"}`}>×{r.antal}</span>
                     </div>
-                    <h3 className="display line-clamp-2 text-[1.35rem] leading-tight">{r.dryck.namn}</h3>
+                    <h2 className="display line-clamp-2 text-[1.35rem] leading-tight">{r.dryck.namn}</h2>
                     <p className="truncate text-sm text-muted">{[r.dryck.producent, r.dryck.region, r.dryck.land].filter(Boolean).join(" · ")}</p>
                     <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-sm">
                       {r.snitt != null && <span className="num text-gold">★ {betygText(r.snitt)}</span>}

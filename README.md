@@ -15,7 +15,7 @@ person och körs lokalt.
 | 4 | Smakprofil-AI och önskelista | Klar |
 | 5 | Vinprovning | Klar |
 | 6 | Statistik, export och import | Klar |
-| 7 | PWA/offline och slutputs | |
+| 7 | PWA/offline och slutputs | Klar |
 
 ## Kom igång
 
@@ -25,6 +25,7 @@ Kräver Node 20+.
 npm install            # installerar och genererar Prisma-klienten
 cp .env.example .env   # om .env saknas
 npm run db:migrate     # skapar SQLite-databasen (.data/dev.db)
+npm run import -- xwines data/fixtures/xwines-test-100.csv   # valfritt: 100 viner i katalogen
 npm run db:seed        # valfritt: exempeldata, märkt "Exempeldata"
 npm run dev            # http://localhost:3000
 ```
@@ -35,11 +36,35 @@ Från mobilen på samma wifi: öppna `http://<datorns-ip>:3000`.
 
 | Kommando | Gör |
 | --- | --- |
-| `npm test` | enhetstester (formatering, kontrast) |
+| `npm test` | enhetstester (formatering, kontrast, smakprofil, provningskalkyl, statistik, CSV, import) |
 | `npm run lint` | ESLint |
-| `npm run build` / `npm start` | produktionsbygge |
+| `npm run build` / `npm start` | produktionsbygge (krävs för offline och installation) |
 | `npm run db:demo:rensa` | tar bort all exempeldata |
 | `npm run db:studio` | bläddra i databasen |
+
+## Funktioner
+
+| Var | Vad |
+| --- | --- |
+| Samling (`/`) | Alla flaskor med sök och filter (vin/sprit, kategori, land, druva, drickfönster), sortering och kort- eller listvy. |
+| Lägg till (`+`) | Sök i katalogen, skanna streckkod, fota etiketten (AI läser av den) eller fyll i själv, med AI-ifyllning av resten. |
+| Flaska | Detaljer, smakprofil, drickfönster, betyg. "Drack den" minskar antalet och öppnar betygsrutan (0,0–10,0, kommentar, tillfälle eller "Hoppa över"). |
+| Smakprofil | Separat för vin och sprit: radardiagram, vad du gillar, rekommendationer ur katalogen, "Utforska" och "Undvik". |
+| Provning | Antal deltagare, viner och budget ger flaskor (ceil(deltagare × 0,5), minst en per vin), ml per glas och totalbudget. AI föreslår viner i provningsordning, inköpslista, utskrivbart protokoll (även blint) och betygen kan föras in i historiken. |
+| Mer | Önskelista, historik, statistik, export/import, källor och licenser. |
+
+## Installera som app (PWA)
+
+Kör produktionsbygget (`npm run build && npm start`) och öppna appen i mobilen:
+
+- **iPhone (Safari):** Dela → "Lägg till på hemskärmen".
+- **Android (Chrome):** menyn → "Installera app".
+
+Service workern (`public/sw.js`, handskriven) registreras bara i produktionsbygget, så att den inte
+stör utvecklingsservern. Den sparar sidorna du besöker, och i bakgrunden även huvudsidorna och alla
+flaskor i samlingen, så att samlingen går att bläddra i utan nät. Det som skriver (lägga till, betyg,
+AI) kräver anslutning; appen visar en rad överst när den är offline och ett tydligt meddelande om man
+försöker spara.
 
 ## AI
 
@@ -68,6 +93,17 @@ Konventioner:
 - Smakprofilen använder skalan 0–12, som Systembolagets smakklockor.
 - Betyg lagras i tiondelar (78 = 7,8) och visas med decimalkomma.
 - Listor (druvor, aromer, mat) lagras som JSON.
+
+## Köra på nätet
+
+Appen har ingen inloggning. Lägg den därför inte öppet på internet med dina data. Alternativ:
+
+- Kör den hemma och nå den via ett privat nätverk (t.ex. Tailscale).
+- Driftsätt den bakom en åtkomstspärr (t.ex. Vercel Password Protection eller Cloudflare Access).
+- Vill fler använda den behövs inloggning och en användarkolumn på Flaska, Betyg, Onskning och Provning.
+
+SQLite-filen fungerar på en vanlig server eller VPS. På serverlösa plattformar (Vercel, Netlify) byts
+databasen till Postgres, enligt nedan.
 
 **Byta till Postgres** (t.ex. Supabase eller Neon):
 1. Sätt `provider = "postgresql"` i `schema.prisma`.

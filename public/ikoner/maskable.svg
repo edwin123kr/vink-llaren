@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="0" fill="#120e0f"/>
+<defs><clipPath id="skal"><path d="M168 96h176c6 70 4 118-22 152-18 24-42 38-66 40-24-2-48-16-66-40-26-34-28-82-22-152z"/></clipPath>
+<radialGradient id="glod" cx="50%" cy="38%" r="60%"><stop offset="0" stop-color="#3a1620"/><stop offset="1" stop-color="#120e0f" stop-opacity="0"/></radialGradient></defs>
+<circle cx="256" cy="230" r="230" fill="url(#glod)"/>
+<g transform="translate(71.68 71.68) scale(0.72)">
+<rect x="150" y="186" width="212" height="120" fill="#7d1f35" clip-path="url(#skal)"/>
+<path d="M150 186c40-14 72 14 106 0s72-14 106 0" fill="none" stroke="#a8324f" stroke-width="6" clip-path="url(#skal)"/>
+<path d="M168 96h176c6 70 4 118-22 152-18 24-42 38-66 40-24-2-48-16-66-40-26-34-28-82-22-152z" fill="none" stroke="#d9ac55" stroke-width="18" stroke-linejoin="round"/>
+<path d="M256 290v112M184 410h144" fill="none" stroke="#d9ac55" stroke-width="18" stroke-linecap="round"/>
+</g>
+</svg>

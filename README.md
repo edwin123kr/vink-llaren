@@ -9,7 +9,7 @@ person och körs lokalt.
 | Fas | Innehåll | Status |
 | --- | --- | --- |
 | 0 | Grund: datamodell, databas, designsystem, appskal, AI-lager med låtsasläge | Klar |
-| 1 | Katalog och importskript (X-Wines, Open Food Facts) | |
+| 1 | Katalog och importskript (X-Wines, Open Food Facts) | Klar |
 | 2 | Samlingen: lista, filter, detaljvy, lägga till, "Drack den" + betyg | |
 | 3 | AI-ifyllning, etikettfoto, streckkodsskanning | |
 | 4 | Smakprofil-AI och önskelista | |
@@ -24,7 +24,7 @@ Kräver Node 20+.
 ```bash
 npm install            # installerar och genererar Prisma-klienten
 cp .env.example .env   # om .env saknas
-npm run db:migrate     # skapar SQLite-databasen (dev.db)
+npm run db:migrate     # skapar SQLite-databasen (.data/dev.db)
 npm run db:seed        # valfritt: exempeldata, märkt "Exempeldata"
 npm run dev            # http://localhost:3000
 ```
@@ -74,6 +74,20 @@ Konventioner:
 2. Byt adaptern i `lib/db.ts` mot `@prisma/adapter-pg`.
 3. Peka `DATABASE_URL` mot den nya databasen.
 4. Kör `npm run db:migrate`.
+
+## Katalogimport
+
+```bash
+npm run import -- xwines data/fixtures/xwines-test-100.csv     # 100 viner som följer med repot
+npm run import -- xwines ~/Downloads/XWines_Full_100K_wines.csv # hela X-Wines (ladda ner från deras Google Drive)
+npm run import -- off ~/Downloads/openfoodfacts-products.jsonl.gz
+npm run import -- off ~/Downloads/en.openfoodfacts.org.products.csv.gz
+```
+
+Flaggor: `--limit N` och `--dry-run`. Dubbletter kontrolleras först på EAN och sedan på namn,
+producent och årgång. En dubblett skapar ingen ny rad, men tomma fält på den befintliga raden fylls i.
+Varje rad sparar källa, id i källan och licens, och en logg skrivs till `data/import-logs/`.
+Från Open Food Facts tas bara vin och sprit med namn, giltig EAN och tydlig kategori.
 
 ## Katalogkällor
 

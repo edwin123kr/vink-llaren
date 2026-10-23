@@ -7,7 +7,7 @@ import { PrismaClient } from "@/lib/generated/prisma/client";
  * Byte till Postgres: ändra provider i schema.prisma och byt adaptern här mot @prisma/adapter-pg.
  */
 function create() {
-  const url = process.env.DATABASE_URL ?? "file:./dev.db";
+  const url = process.env.DATABASE_URL ?? "file:./.data/dev.db";
   return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url }) });
 }
 

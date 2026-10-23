@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { aiMode, aiModel } from "@/lib/ai";
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { Icon, type IconName } from "@/components/Icon";
 import { PageHeader } from "@/components/Page";
@@ -7,11 +8,11 @@ import { PageHeader } from "@/components/Page";
 export const metadata: Metadata = { title: "Mer" };
 export const dynamic = "force-dynamic";
 
-const RADER: { icon: IconName; title: string; text: string; fas: number }[] = [
+const RADER: { icon: IconName; title: string; text: string; fas: number; href?: string }[] = [
   { icon: "hjarta", title: "Önskelista", text: "Flaskor du vill köpa", fas: 4 },
   { icon: "stapel", title: "Statistik", text: "Värde, snittbetyg och mest prisvärda", fas: 6 },
   { icon: "export", title: "Export och import", text: "Säkerhetskopia som JSON eller CSV", fas: 6 },
-  { icon: "bok", title: "Källor och licenser", text: "X-Wines (CC0) och Open Food Facts (ODbL)", fas: 1 },
+  { icon: "bok", title: "Källor och licenser", text: "X-Wines (CC0) och Open Food Facts (ODbL)", fas: 1, href: "/mer/kallor" },
 ];
 
 export default async function Mer() {
@@ -21,16 +22,27 @@ export default async function Mer() {
     <>
       <PageHeader eyebrow="Inställningar och verktyg" title="Mer" />
       <ul className="grid gap-3">
-        {RADER.map((r) => (
-          <li key={r.title} className="card flex min-h-20 items-center gap-4 p-4">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface-2 text-gold"><Icon name={r.icon} /></span>
-            <div className="min-w-0 flex-1">
-              <h2 className="font-semibold">{r.title}</h2>
-              <p className="text-sm text-muted">{r.text}</p>
-            </div>
-            <span className="chip shrink-0">Fas {r.fas}</span>
-          </li>
-        ))}
+        {RADER.map((r) => {
+          const inner = (
+            <>
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface-2 text-gold"><Icon name={r.icon} /></span>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-semibold">{r.title}</h2>
+                <p className="text-sm text-muted">{r.text}</p>
+              </div>
+              {r.href ? <Icon name="pil" className="text-muted" /> : <span className="chip shrink-0">Fas {r.fas}</span>}
+            </>
+          );
+          return (
+            <li key={r.title}>
+              {r.href ? (
+                <Link href={r.href} className="card flex min-h-20 items-center gap-4 p-4 transition-colors hover:border-muted">{inner}</Link>
+              ) : (
+                <div className="card flex min-h-20 items-center gap-4 p-4">{inner}</div>
+              )}
+            </li>
+          );
+        })}
       </ul>
 
       <section className="card mt-6 p-5" aria-labelledby="status-title">

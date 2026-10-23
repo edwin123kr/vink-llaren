@@ -1,0 +1,6 @@
+{"code":"2000000000011","product_name":"Testvin Rött","brands":"Testproducent","categories_tags":["en:beverages","en:alcoholic-beverages","en:wines","en:red-wines"],"origins_tags":["en:italy"],"quantity":"75 cl","nutriments":{"alcohol_100g":13.5},"image_front_url":"https://images.openfoodfacts.org/images/products/test/front.jpg"}
+{"code":"2000000000028","product_name_sv":"Testwhisky","product_name":"Test Whisky","brands":"Testdestilleri, Annan","categories_tags":["en:alcoholic-beverages","en:spirits","en:whiskies","en:scotch-whisky"],"origins_tags":["en:united-kingdom"],"quantity":"70cl","nutriments":{"alcohol_100g":"40"}}
+{"code":"2000000000035","product_name":"Testöl","brands":"Bryggeri","categories_tags":["en:beverages","en:beers"],"quantity":"33 cl"}
+{"code":"2000000000042","product_name":"","brands":"Utan namn","categories_tags":["en:wines"]}
+{"code":"2000000000059","product_name":"Testbubbel","brands":"Testhuset","categories_tags":["en:wines","en:sparkling-wines","en:champagnes"],"origins_tags":["en:france"],"quantity":"1,5 l","nutriments":{"alcohol_100g":12}}
+{"code":"2000000000011","product_name":"Testvin Rött dubblett","brands":"Testproducent","categories_tags":["en:wines","en:red-wines"]}

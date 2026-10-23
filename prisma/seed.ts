@@ -5,8 +5,9 @@
 import "dotenv/config";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../lib/generated/prisma/client";
+import { sokText } from "../lib/sok";
 
-const db = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./dev.db" }) });
+const db = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./.data/dev.db" }) });
 
 type D = Parameters<typeof db.dryck.create>[0]["data"];
 const drycker: (D & { flaska?: { antal: number; inkopspris: number; plats: string; drickFran?: number; drickTill?: number }; betyg?: number[] })[] = [
@@ -23,7 +24,7 @@ const drycker: (D & { flaska?: { antal: number; inkopspris: number; plats: strin
 async function main() {
   await db.dryck.deleteMany({ where: { kalla: "demo" } });
   for (const { flaska, betyg, ...d } of drycker) {
-    const dryck = await db.dryck.create({ data: d });
+    const dryck = await db.dryck.create({ data: { ...d, sok: sokText(d as never) } });
     if (flaska) await db.flaska.create({ data: { ...flaska, dryckId: dryck.id, inkopsdatum: new Date("2026-03-01") } });
     for (const [i, b] of (betyg ?? []).entries()) {
       await db.betyg.create({ data: { dryckId: dryck.id, betyg: b, datum: new Date(2026, 4 + i, 10) } });

@@ -41,6 +41,7 @@ model Dryck {
   kalla          String // "xwines" | "openfoodfacts" | "ai" | "manuell" | "demo"
   kallaId        String?
   licens         String? // t.ex. "CC0-1.0", "ODbL-1.0"
+  sok            String   @default("") // normaliserad söktext (gemener, utan diakritiska tecken)
   skapad         DateTime @default(now())
   uppdaterad     DateTime @updatedAt
 
@@ -52,6 +53,7 @@ model Dryck {
   @@index([kategori])
   @@index([producent, namn, argang])
   @@index([kalla, kallaId])
+  @@index([sok])
 }
 
 /// En post i min samling.

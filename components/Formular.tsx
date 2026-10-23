@@ -5,13 +5,14 @@ import { DryckForm } from "./DryckForm";
 import type { DryckState, FlaskaState } from "@/lib/formstate";
 import { AiIfyllning } from "./AiIfyllning";
 
-export function NyFlaskaForm({ init }: { init?: DryckState }) {
+export function NyFlaskaForm({ init, ai = false }: { init?: DryckState; ai?: boolean }) {
   return (
     <DryckForm
       lage="ny"
       dryckInit={init}
-      verktyg={(d, satt) => <AiIfyllning d={d} satt={satt} />}
-      spara={(d, f) => laggTillNy(d, f, init?.namn ? "ai" : "manuell")}
+      aiFran={ai}
+      verktyg={ai ? undefined : (d, satt) => <AiIfyllning d={d} satt={satt} />}
+      spara={(d, f, ai) => laggTillNy(d, f, ai ? "ai" : "manuell")}
     />
   );
 }

@@ -26,3 +26,10 @@ export const DryckForslag = z.object({
   sakerhet: z.enum(["hog", "medel", "lag"]).describe("Hur säker identifieringen och uppgifterna är"),
 });
 export type DryckForslag = z.infer<typeof DryckForslag>;
+
+/** Svar på ett etikettfoto. */
+export const EtikettSvar = DryckForslag.extend({
+  arDryck: z.boolean().describe("false om bilden inte visar en vin- eller spritflaska/etikett"),
+  lastText: z.string().describe("Den text du kan läsa på etiketten, ordagrant och kort"),
+});
+export type EtikettSvar = z.infer<typeof EtikettSvar>;

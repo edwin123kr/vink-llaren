@@ -1,4 +1,4 @@
-import type { DryckForslag } from "./schemas";
+import type { DryckForslag, EtikettSvar } from "./schemas";
 
 /**
  * Låtsasläge: deterministiska svar så att flöden kan byggas och testas utan API-nyckel.
@@ -51,4 +51,8 @@ export function mockDryckForslag(hint: string): DryckForslag {
     prisCa: null,
     sakerhet: "lag",
   };
+}
+
+export function mockEtikett(): EtikettSvar {
+  return { ...mockDryckForslag("Låtsasetikett"), arDryck: true, lastText: "(låtsasläge: ingen bild har lästs)" };
 }

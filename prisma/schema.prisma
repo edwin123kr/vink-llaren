@@ -132,3 +132,11 @@ model Smakanalys {
 
   @@index([typ, skapad])
 }
+
+/// Egna foton (etiketter). Lagras i databasen så att appen fungerar utan filsystem (t.ex. på en molntjänst).
+model Bild {
+  id     String   @id @default(cuid())
+  typ    String // MIME-typ
+  data   Bytes
+  skapad DateTime @default(now())
+}

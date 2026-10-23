@@ -48,12 +48,16 @@ export function DryckForm({
   sammanfattning,
   verktyg,
   sparaText = "Spara flaskan",
+  aiFran = false,
 }: {
   /** ny: dryck + flaska · katalog: bara flaska · redigera: båda, ifyllda */
   lage: "ny" | "katalog" | "redigera";
   dryckInit?: DryckState;
   flaskaInit?: FlaskaState;
-  spara: (dryck: ReturnType<typeof dryckPayload> | null, flaska: ReturnType<typeof flaskaPayload>) => Promise<Resultat>;
+  /** tredje argumentet är sant om AI har fyllt i något */
+  spara: (dryck: ReturnType<typeof dryckPayload> | null, flaska: ReturnType<typeof flaskaPayload>, ai: boolean) => Promise<Resultat>;
+  /** formuläret startar med AI-uppgifter (t.ex. från ett etikettfoto) */
+  aiFran?: boolean;
   sammanfattning?: ReactNode;
   /** t.ex. AI-ifyllning; får ett sätt att uppdatera drycken */
   verktyg?: (d: DryckState, satt: (patch: Partial<DryckState>) => void) => ReactNode;
@@ -62,6 +66,7 @@ export function DryckForm({
   const [d, setD] = useState<DryckState>(dryckInit);
   const [f, setF] = useState<FlaskaState>(flaskaInit ?? tomFlaska());
   const [fel, setFel] = useState<FaltFel>({});
+  const [ai, setAi] = useState(aiFran);
   const [pending, start] = useTransition();
   const router = useRouter();
   const felRuta = useRef<HTMLDivElement>(null);
@@ -74,7 +79,7 @@ export function DryckForm({
   const skicka = (e: React.FormEvent) => {
     e.preventDefault();
     start(async () => {
-      const res = await spara(visaDryck ? dryckPayload(d) : null, flaskaPayload(f));
+      const res = await spara(visaDryck ? dryckPayload(d) : null, flaskaPayload(f), ai);
       if (res.ok) {
         router.push(`/flaska/${res.id}`);
         router.refresh();
@@ -112,7 +117,10 @@ export function DryckForm({
 
       {visaDryck && (
         <>
-          {verktyg?.(d, sd)}
+          {verktyg?.(d, (p) => {
+            setAi(true);
+            sd(p);
+          })}
           <fieldset className="card grid gap-4 p-5 sm:grid-cols-2">
             <legend className="display px-1 text-2xl">Drycken</legend>
             <Falt id="d-namn" label="Namn *" fel={fel.namn} className="sm:col-span-2">{inp("namn", { required: true, autoComplete: "off" })}</Falt>

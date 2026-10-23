@@ -1,15 +1,19 @@
 /**
- * Exempeldata för utveckling. Allt märks kalla="demo" och kan tas bort med `npm run db:demo:rensa`.
+ * Exempeldata för utveckling: ett demokonto (demo@exempel.se / demo1234) med egna drycker märkta
+ * kalla="demo". Tas bort med `npm run db:demo:rensa`.
  * Namnen är medvetet generiska (inga riktiga produkter, priser eller betyg hittas på).
  */
 import "dotenv/config";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient } from "../lib/generated/prisma/client";
+import { PrismaClient, type Prisma } from "../lib/generated/prisma/client";
 import { sokText } from "../lib/sok";
+import { hashaLosenord } from "../lib/losenord";
+
+export const DEMO = { epost: "demo@exempel.se", losenord: "demo1234" };
 
 const db = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./.data/dev.db" }) });
 
-type D = Parameters<typeof db.dryck.create>[0]["data"];
+type D = Prisma.DryckUncheckedCreateInput;
 const drycker: (D & { flaska?: { antal: number; inkopspris: number; plats: string; drickFran?: number; drickTill?: number }; betyg?: number[] })[] = [
   { namn: "Exempel Nebbiolo", producent: "Demoproducent", typ: "vin", kategori: "rott", druvor: ["Nebbiolo"], land: "Italien", region: "Piemonte", argang: 2019, alkoholhalt: 14, volymMl: 750, fyllighet: 9, sotma: 1, syra: 9, stravhet: 10, aromer: ["körsbär", "ros", "tjära"], mat: ["vilt", "svamp"], kalla: "demo", flaska: { antal: 2, inkopspris: 389, plats: "Källaren, hylla 1", drickFran: 2024, drickTill: 2034 }, betyg: [84] },
   { namn: "Exempel Pinot Noir", producent: "Demoproducent", typ: "vin", kategori: "rott", druvor: ["Pinot Noir"], land: "Frankrike", region: "Bourgogne", argang: 2021, alkoholhalt: 13, volymMl: 750, fyllighet: 6, sotma: 1, syra: 8, stravhet: 5, aromer: ["hallon", "jord", "svamp"], mat: ["anka", "kyckling"], kalla: "demo", flaska: { antal: 3, inkopspris: 249, plats: "Vinkylen", drickFran: 2023, drickTill: 2027 }, betyg: [76, 81] },
@@ -22,15 +26,19 @@ const drycker: (D & { flaska?: { antal: number; inkopspris: number; plats: strin
 ];
 
 async function main() {
-  await db.dryck.deleteMany({ where: { kalla: "demo" } });
+  // ett nytt demokonto varje gång; allt det äger tas bort via cascade
+  await db.anvandare.deleteMany({ where: { epost: DEMO.epost } });
+  const anv = await db.anvandare.create({ data: { epost: DEMO.epost, namn: "Demo", losenordHash: await hashaLosenord(DEMO.losenord) } });
   for (const { flaska, betyg, ...d } of drycker) {
-    const dryck = await db.dryck.create({ data: { ...d, sok: sokText(d as never) } });
-    if (flaska) await db.flaska.create({ data: { ...flaska, dryckId: dryck.id, inkopsdatum: new Date("2026-03-01") } });
+    const dryck = await db.dryck.create({ data: { ...d, sok: sokText(d as never), agareId: anv.id } });
+    if (flaska) await db.flaska.create({ data: { ...flaska, dryckId: dryck.id, anvandareId: anv.id, inkopsdatum: new Date("2026-03-01") } });
     for (const [i, b] of (betyg ?? []).entries()) {
-      await db.betyg.create({ data: { dryckId: dryck.id, betyg: b, datum: new Date(2026, 4 + i, 10) } });
+      await db.betyg.create({ data: { dryckId: dryck.id, anvandareId: anv.id, betyg: b, datum: new Date(2026, 4 + i, 10) } });
     }
   }
-  console.log(`Exempeldata: ${await db.dryck.count({ where: { kalla: "demo" } })} drycker, ${await db.flaska.count()} flaskposter, ${await db.betyg.count()} betyg.`);
+  const mitt = { where: { anvandareId: anv.id } };
+  console.log(`Exempeldata: ${drycker.length} drycker, ${await db.flaska.count(mitt)} flaskposter, ${await db.betyg.count(mitt)} betyg.`);
+  console.log(`Logga in med ${DEMO.epost} / ${DEMO.losenord}`);
 }
 
 main().finally(() => db.$disconnect());

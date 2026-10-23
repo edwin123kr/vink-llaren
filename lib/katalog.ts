@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
+import { synligaDrycker } from "@/lib/auth";
 import { normalisera } from "@/lib/sok";
 import type { Prisma } from "@/lib/generated/prisma/client";
 
@@ -12,10 +13,10 @@ export const KALLOR: Record<string, { namn: string; licens: string; url?: string
 };
 
 /** Sök i katalogen: varje ord måste finnas i söktexten (namn, producent, region, land, druvor). */
-export async function sokKatalog(q: string, opts: { kategori?: string; typ?: string; limit?: number } = {}) {
+export async function sokKatalog(anvandareId: string, q: string, opts: { kategori?: string; typ?: string; limit?: number } = {}) {
   const ord = normalisera(q).split(" ").filter((w) => w.length > 0).slice(0, 6);
   const where: Prisma.DryckWhereInput = {
-    AND: ord.map((w) => ({ sok: { contains: w } })),
+    AND: [...ord.map((w) => ({ sok: { contains: w } })), synligaDrycker(anvandareId)],
     ...(opts.kategori ? { kategori: opts.kategori } : {}),
     ...(opts.typ ? { typ: opts.typ } : {}),
   };

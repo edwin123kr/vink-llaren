@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { kravAnvandare } from "@/lib/auth";
 import type { Provningsforslag } from "@/lib/ai";
 import { kalkyl } from "@/lib/provning";
 import { datum } from "@/lib/format";
@@ -12,7 +13,8 @@ export const dynamic = "force-dynamic";
 
 /** Utskrivbart protokoll: en sida per deltagare med plats för anteckningar och poäng. */
 export default async function Protokoll({ params, searchParams }: PageProps<"/provning/[id]/protokoll">) {
-  const p = await db.provning.findUnique({ where: { id: (await params).id } });
+  const anv = await kravAnvandare();
+  const p = await db.provning.findFirst({ where: { id: (await params).id, anvandareId: anv.id } });
   if (!p) notFound();
   const sp = await searchParams;
   const blind = typeof sp.blind === "string" ? sp.blind === "1" : /blind/i.test(p.tema ?? "");

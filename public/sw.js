@@ -3,11 +3,11 @@
  *  - Byggfiler (/_next/static) och ikoner: cache först, de har unika namn.
  *  - Bilder (/api/bild): cache först med uppdatering i bakgrunden.
  *  - Allt som skriver (POST m.m.) går alltid till nätet. */
-const VERSION = "vk-v1";
+const VERSION = "vk-v2";
 const SIDOR = `${VERSION}-sidor`;
 const STATISKT = `${VERSION}-statiskt`;
 const BILDER = `${VERSION}-bilder`;
-const KARNA = ["/", "/offline", "/historik", "/smakprofil", "/onskelista", "/provning", "/statistik", "/mer", "/lagg-till"];
+const KARNA = ["/", "/offline", "/logga-in", "/historik", "/smakprofil", "/onskelista", "/provning", "/statistik", "/mer", "/lagg-till"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
@@ -31,7 +31,8 @@ async function natetForst(req, fallbackOffline) {
   const cache = await caches.open(SIDOR);
   try {
     const res = await fetch(req);
-    if (res.ok && res.type === "basic") cache.put(req, res.clone());
+    // spara inte omdirigeringar (t.ex. till inloggningen) som om de vore sidan
+    if (res.ok && res.type === "basic" && !res.redirected) cache.put(req, res.clone());
     return res;
   } catch {
     // RSC-data (klientnavigering) måste matcha exakt; annars faller Next tillbaka på vanlig sidladdning,
@@ -91,7 +92,7 @@ self.addEventListener("message", (e) => {
       for (const u of urls.slice(0, 200)) {
         try {
           const res = await fetch(u, { credentials: "same-origin" });
-          if (!res.ok) continue;
+          if (!res.ok || res.redirected) continue;
           // sidans JS och CSS behövs också för att den ska fungera offline
           const html = await res.clone().text();
           for (const m of html.matchAll(/\/_next\/static\/[^"'\s)\\]+/g)) filer.add(m[0]);

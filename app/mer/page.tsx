@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { aiMode, aiModel } from "@/lib/ai";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { kravAnvandare, synligaDrycker } from "@/lib/auth";
 import { Icon, type IconName } from "@/components/Icon";
 import { PageHeader } from "@/components/Page";
 
@@ -9,6 +10,7 @@ export const metadata: Metadata = { title: "Mer" };
 export const dynamic = "force-dynamic";
 
 const RADER: { icon: IconName; title: string; text: string; fas: number; href?: string }[] = [
+  { icon: "person", title: "Mitt konto", text: "Logga ut, byt lösenord eller radera kontot", fas: 0, href: "/mer/konto" },
   { icon: "hjarta", title: "Önskelista", text: "Flaskor du vill köpa", fas: 4, href: "/onskelista" },
   { icon: "bok", title: "Historik", text: "Alla betyg, senast först", fas: 2, href: "/historik" },
   { icon: "stapel", title: "Statistik", text: "Värde, snittbetyg och mest prisvärda", fas: 6, href: "/statistik" },
@@ -18,10 +20,11 @@ const RADER: { icon: IconName; title: string; text: string; fas: number; href?: 
 
 export default async function Mer() {
   const lage = aiMode();
-  const katalog = await db.dryck.count();
+  const anv = await kravAnvandare();
+  const katalog = await db.dryck.count({ where: synligaDrycker(anv.id) });
   return (
     <>
-      <PageHeader eyebrow="Inställningar och verktyg" title="Mer" />
+      <PageHeader eyebrow="Inställningar och verktyg" title="Mer">Inloggad som {anv.namn}.</PageHeader>
       <ul className="grid gap-3">
         {RADER.map((r) => {
           const inner = (

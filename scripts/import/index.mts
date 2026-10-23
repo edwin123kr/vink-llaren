@@ -33,7 +33,8 @@ if (!["xwines", "off"].includes(kalla ?? "") || !fil) {
 const db = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./.data/dev.db" }) });
 
 /* --- befintliga nycklar för dubblettkontroll --- */
-const befintliga = await db.dryck.findMany({ select: { id: true, namn: true, producent: true, argang: true, ean: true } });
+// bara den delade katalogen; användarnas egna drycker rörs inte
+const befintliga = await db.dryck.findMany({ where: { agareId: null }, select: { id: true, namn: true, producent: true, argang: true, ean: true } });
 const perEan = new Map(befintliga.filter((d) => d.ean).map((d) => [d.ean!, d.id]));
 const perNyckel = new Map(befintliga.map((d) => [dubblettNyckel(d), d.id]));
 

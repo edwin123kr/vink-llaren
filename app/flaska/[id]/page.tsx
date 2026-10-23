@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { kravAnvandare } from "@/lib/auth";
 import { kategori } from "@/lib/kategorier";
 import { KALLOR } from "@/lib/katalog";
 import { betygText, datum, decimal, drickfonster, kr, lista, procent } from "@/lib/format";
@@ -14,9 +15,10 @@ import { SmakStaplar } from "@/components/SmakStaplar";
 export const dynamic = "force-dynamic";
 
 async function hamta(id: string) {
-  return db.flaska.findUnique({
-    where: { id },
-    include: { dryck: { include: { betyg: { orderBy: { datum: "desc" } } } } },
+  const anv = await kravAnvandare();
+  return db.flaska.findFirst({
+    where: { id, anvandareId: anv.id },
+    include: { dryck: { include: { betyg: { where: { anvandareId: anv.id }, orderBy: { datum: "desc" } } } } },
   });
 }
 

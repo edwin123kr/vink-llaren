@@ -18,6 +18,8 @@ function isActive(path: string, href: string) {
 /** Mobil: bottenmeny med en upphöjd "+"-knapp i mitten. Desktop: toppmeny med knapp. */
 export function Nav() {
   const path = usePathname();
+  // ingen meny på inloggningssidorna
+  if (path.startsWith("/logga-in") || path.startsWith("/skapa-konto")) return null;
   const left = ITEMS.slice(0, 2);
   const right = ITEMS.slice(2);
   const link = (i: (typeof ITEMS)[number]) => {

@@ -14,7 +14,7 @@ datasource db {
 
 /// Katalogen: en dryck oavsett om du äger den eller inte.
 model Dryck {
-  id             String   @id @default(cuid())
+  id             String     @id @default(cuid())
   namn           String
   producent      String?
   typ            String // "vin" | "sprit"
@@ -34,16 +34,19 @@ model Dryck {
   mat            Json? // string[]
   beskrivning    String?
   bildUrl        String?
-  ean            String?  @unique
+  ean            String? // unik inom katalogen respektive per ägare (kontrolleras i koden)
   sbArtikelnr    String? // Systembolagets artikelnummer, fylls i manuellt
   prisCa         Int? // kronor
-  prisUppskattat Boolean  @default(false)
+  prisUppskattat Boolean    @default(false)
   kalla          String // "xwines" | "openfoodfacts" | "ai" | "manuell" | "demo"
   kallaId        String?
   licens         String? // t.ex. "CC0-1.0", "ODbL-1.0"
-  sok            String   @default("") // normaliserad söktext (gemener, utan diakritiska tecken)
-  skapad         DateTime @default(now())
-  uppdaterad     DateTime @updatedAt
+  sok            String     @default("") // normaliserad söktext (gemener, utan diakritiska tecken)
+  /// null = delad katalog (importerad). Annars en dryck som en användare har lagt in själv.
+  agareId        String?
+  agare          Anvandare? @relation(fields: [agareId], references: [id], onDelete: Cascade)
+  skapad         DateTime   @default(now())
+  uppdaterad     DateTime   @updatedAt
 
   flaskor    Flaska[]
   betyg      Betyg[]
@@ -54,11 +57,15 @@ model Dryck {
   @@index([producent, namn, argang])
   @@index([kalla, kallaId])
   @@index([sok])
+  @@index([ean])
+  @@index([agareId])
 }
 
 /// En post i min samling.
 model Flaska {
   id           String    @id @default(cuid())
+  anvandareId  String
+  anvandare    Anvandare @relation(fields: [anvandareId], references: [id], onDelete: Cascade)
   dryckId      String
   dryck        Dryck     @relation(fields: [dryckId], references: [id], onDelete: Cascade)
   antal        Int       @default(1)
@@ -75,41 +82,50 @@ model Flaska {
   betyg Betyg[]
 
   @@index([dryckId])
+  @@index([anvandareId])
 }
 
 /// Betyg och historik. 0–100 tiondelar (0,0–10,0).
 model Betyg {
-  id         String    @id @default(cuid())
-  dryckId    String
-  dryck      Dryck     @relation(fields: [dryckId], references: [id], onDelete: Cascade)
-  flaskaId   String?
-  flaska     Flaska?   @relation(fields: [flaskaId], references: [id], onDelete: SetNull)
-  provningId String?
-  provning   Provning? @relation(fields: [provningId], references: [id], onDelete: SetNull)
-  betyg      Int
-  kommentar  String?
-  tillfalle  String? // tillfälle eller mat
-  datum      DateTime  @default(now())
+  id          String    @id @default(cuid())
+  anvandareId String
+  anvandare   Anvandare @relation(fields: [anvandareId], references: [id], onDelete: Cascade)
+  dryckId     String
+  dryck       Dryck     @relation(fields: [dryckId], references: [id], onDelete: Cascade)
+  flaskaId    String?
+  flaska      Flaska?   @relation(fields: [flaskaId], references: [id], onDelete: SetNull)
+  provningId  String?
+  provning    Provning? @relation(fields: [provningId], references: [id], onDelete: SetNull)
+  betyg       Int
+  kommentar   String?
+  tillfalle   String? // tillfälle eller mat
+  datum       DateTime  @default(now())
 
   @@index([dryckId])
-  @@index([datum])
+  @@index([anvandareId, datum])
 }
 
 /// Önskelista ("vill köpa"). Kan peka på en katalogdryck eller bara ha ett namn (t.ex. ett AI-förslag).
 model Onskning {
-  id         String   @id @default(cuid())
-  dryckId    String?
-  dryck      Dryck?   @relation(fields: [dryckId], references: [id], onDelete: SetNull)
-  namn       String
-  motivering String?
-  prisCa     Int?
-  kalla      String // "ai-rekommendation" | "manuell"
-  skapad     DateTime @default(now())
+  id          String    @id @default(cuid())
+  anvandareId String
+  anvandare   Anvandare @relation(fields: [anvandareId], references: [id], onDelete: Cascade)
+  dryckId     String?
+  dryck       Dryck?    @relation(fields: [dryckId], references: [id], onDelete: SetNull)
+  namn        String
+  motivering  String?
+  prisCa      Int?
+  kalla       String // "ai-rekommendation" | "manuell"
+  skapad      DateTime  @default(now())
+
+  @@index([anvandareId])
 }
 
 /// En planerad vinprovning med AI-förslaget sparat.
 model Provning {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
+  anvandareId     String
+  anvandare       Anvandare @relation(fields: [anvandareId], references: [id], onDelete: Cascade)
   titel           String
   datum           DateTime?
   deltagare       Int
@@ -117,26 +133,71 @@ model Provning {
   budgetPerPerson Int
   tema            String?
   forslag         Json? // AI-resultatet
-  skapad          DateTime @default(now())
+  skapad          DateTime  @default(now())
 
   betyg Betyg[]
+
+  @@index([anvandareId])
 }
 
 /// Sparade smakprofil-analyser (så att AI inte körs vid varje sidvisning).
 model Smakanalys {
-  id         String   @id @default(cuid())
-  typ        String // "vin" | "sprit"
-  antalBetyg Int
-  resultat   Json
-  skapad     DateTime @default(now())
+  id          String    @id @default(cuid())
+  anvandareId String
+  anvandare   Anvandare @relation(fields: [anvandareId], references: [id], onDelete: Cascade)
+  typ         String // "vin" | "sprit"
+  antalBetyg  Int
+  resultat    Json
+  skapad      DateTime  @default(now())
 
-  @@index([typ, skapad])
+  @@index([anvandareId, typ, skapad])
 }
 
 /// Egna foton (etiketter). Lagras i databasen så att appen fungerar utan filsystem (t.ex. på en molntjänst).
 model Bild {
-  id     String   @id @default(cuid())
-  typ    String // MIME-typ
-  data   Bytes
-  skapad DateTime @default(now())
+  id      String   @id @default(cuid())
+  agareId String?
+  typ     String // MIME-typ
+  data    Bytes
+  skapad  DateTime @default(now())
+}
+
+/// Ett konto. Lösenordet lagras som scrypt-hash (salt:hash).
+model Anvandare {
+  id           String   @id @default(cuid())
+  epost        String   @unique // gemener
+  namn         String
+  losenordHash String
+  skapad       DateTime @default(now())
+
+  sessioner    Session[]
+  drycker      Dryck[]
+  flaskor      Flaska[]
+  betyg        Betyg[]
+  onskningar   Onskning[]
+  provningar   Provning[]
+  smakanalyser Smakanalys[]
+  aiAnrop      AiAnrop[]
+}
+
+/// Inloggning. Kakan innehåller en slumpad token; här lagras bara dess SHA-256.
+model Session {
+  id          String    @id // sha256(token)
+  anvandareId String
+  anvandare   Anvandare @relation(fields: [anvandareId], references: [id], onDelete: Cascade)
+  utgar       DateTime
+  skapad      DateTime  @default(now())
+
+  @@index([anvandareId])
+}
+
+/// Räknar AI-anrop per användare och dag (för en daglig gräns när vänner testar med din API-nyckel).
+model AiAnrop {
+  id          String    @id @default(cuid())
+  anvandareId String
+  anvandare   Anvandare @relation(fields: [anvandareId], references: [id], onDelete: Cascade)
+  typ         String
+  skapad      DateTime  @default(now())
+
+  @@index([anvandareId, skapad])
 }

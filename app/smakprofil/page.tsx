@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { kravAnvandare } from "@/lib/auth";
 import { smakdata } from "@/lib/smakdata";
 import type { Smakanalys } from "@/lib/ai";
 import { betygText, datum, kr } from "@/lib/format";
@@ -15,11 +16,12 @@ export const dynamic = "force-dynamic";
 const UTFORSKA_TYP = { druva: "Druva", region: "Region", spritsort: "Spritsort" };
 
 export default async function Smakprofil({ searchParams }: PageProps<"/smakprofil">) {
+  const anv = await kravAnvandare();
   const typ = (await searchParams).typ === "sprit" ? "sprit" : "vin";
   const [data, senaste, onskade] = await Promise.all([
-    smakdata(typ),
-    db.smakanalys.findFirst({ where: { typ }, orderBy: { skapad: "desc" } }),
-    db.onskning.findMany({ select: { dryckId: true, namn: true } }),
+    smakdata(anv.id, typ),
+    db.smakanalys.findFirst({ where: { anvandareId: anv.id, typ }, orderBy: { skapad: "desc" } }),
+    db.onskning.findMany({ where: { anvandareId: anv.id }, select: { dryckId: true, namn: true } }),
   ]);
   const analys = senaste?.resultat as (Smakanalys & { lage?: "mock" | "live" }) | undefined;
   const pasLista = new Set(onskade.map((o) => o.dryckId ?? o.namn));

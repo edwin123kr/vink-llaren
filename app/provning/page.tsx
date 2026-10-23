@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { kravAnvandare } from "@/lib/auth";
 import { datum } from "@/lib/format";
 import { Icon } from "@/components/Icon";
 import { PageHeader } from "@/components/Page";
@@ -10,7 +11,8 @@ export const metadata: Metadata = { title: "Vinprovning" };
 export const dynamic = "force-dynamic";
 
 export default async function Provning() {
-  const tidigare = await db.provning.findMany({ orderBy: { skapad: "desc" }, take: 30 });
+  const anv = await kravAnvandare();
+  const tidigare = await db.provning.findMany({ where: { anvandareId: anv.id }, orderBy: { skapad: "desc" }, take: 30 });
   return (
     <>
       <PageHeader eyebrow="Planera" title="Vinprovning">

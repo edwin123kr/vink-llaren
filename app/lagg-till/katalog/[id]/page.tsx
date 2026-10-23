@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { kravAnvandare, synligaDrycker } from "@/lib/auth";
 import { kategori } from "@/lib/kategorier";
 import { lista, procent } from "@/lib/format";
 import { FlaskBild } from "@/components/FlaskBild";
@@ -11,7 +12,8 @@ export const metadata: Metadata = { title: "Lägg till flaska" };
 export const dynamic = "force-dynamic";
 
 export default async function KatalogFlaska({ params }: PageProps<"/lagg-till/katalog/[id]">) {
-  const d = await db.dryck.findUnique({ where: { id: (await params).id } });
+  const anv = await kravAnvandare();
+  const d = await db.dryck.findFirst({ where: { id: (await params).id, ...synligaDrycker(anv.id) } });
   if (!d) notFound();
   const sammanfattning = (
     <section className="card flex gap-4 p-5" aria-label="Vald dryck">

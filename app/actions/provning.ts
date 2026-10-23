@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { AiError, planeraProvning, type Provningsforslag } from "@/lib/ai";
 import { db } from "@/lib/db";
+import { kravAnvandare, synligaDrycker } from "@/lib/auth";
+import { kontrolleraAiKvot } from "@/lib/aikvot";
 import { kalkyl } from "@/lib/provning";
 import { hamtaBetygade } from "@/lib/smakdata";
 import { grupper } from "@/lib/smak";
@@ -21,9 +23,11 @@ const In = z.object({
 export async function skapaProvning(input: unknown): Promise<{ ok: true; id: string } | { ok: false; fel: Record<string, string> }> {
   const p = In.safeParse(input);
   if (!p.success) return { ok: false, fel: Object.fromEntries(p.error.issues.map((i) => [String(i.path[0] ?? "_"), i.message])) };
+  const anv = await kravAnvandare();
   const k = kalkyl(p.data);
-  const favoriter = grupper((await hamtaBetygade()).filter((d) => d.typ === "vin" && d.snitt >= 70), (d) => d.druvor).slice(0, 4).map((g) => g.namn);
+  const favoriter = grupper((await hamtaBetygade(anv.id)).filter((d) => d.typ === "vin" && d.snitt >= 70), (d) => d.druvor).slice(0, 4).map((g) => g.namn);
   try {
+    await kontrolleraAiKvot(anv.id, "provning");
     const forslag = await planeraProvning({
       deltagare: k.deltagare,
       antalViner: k.antalViner,
@@ -43,6 +47,7 @@ export async function skapaProvning(input: unknown): Promise<{ ok: true; id: str
         budgetPerPerson: p.data.budgetPerPerson,
         tema: p.data.tema || null,
         forslag,
+        anvandareId: anv.id,
       },
     });
     revalidatePath("/provning");
@@ -54,7 +59,8 @@ export async function skapaProvning(input: unknown): Promise<{ ok: true; id: str
 }
 
 export async function taBortProvning(id: string) {
-  await db.provning.delete({ where: { id } }).catch(() => null);
+  const anv = await kravAnvandare();
+  await db.provning.deleteMany({ where: { id, anvandareId: anv.id } });
   revalidatePath("/provning");
 }
 
@@ -64,7 +70,8 @@ const BetygRad = z.object({ index: z.number().int().min(0).max(11), betyg: z.num
 export async function sparaProvningsbetyg(provningId: string, rader: unknown): Promise<{ ok: true; antal: number } | { ok: false; fel: string }> {
   const r = z.array(BetygRad).max(12).safeParse(rader);
   if (!r.success) return { ok: false, fel: "Kontrollera betygen (0–10 med en decimal)." };
-  const prov = await db.provning.findUnique({ where: { id: provningId } });
+  const anv = await kravAnvandare();
+  const prov = await db.provning.findFirst({ where: { id: provningId, anvandareId: anv.id } });
   if (!prov) return { ok: false, fel: "Provningen finns inte längre." };
   const viner = (prov.forslag as Provningsforslag | null)?.viner ?? [];
   let antal = 0;
@@ -72,19 +79,19 @@ export async function sparaProvningsbetyg(provningId: string, rader: unknown): P
     const v = viner[rad.index];
     if (!v) continue;
     const nyckel = dubblettNyckel({ namn: v.namn, producent: v.producent, argang: null });
-    const kandidater = await db.dryck.findMany({ where: { namn: v.namn }, select: { id: true, namn: true, producent: true, argang: true } });
+    const kandidater = await db.dryck.findMany({ where: { namn: v.namn, ...synligaDrycker(anv.id) }, select: { id: true, namn: true, producent: true, argang: true } });
     let dryck = kandidater.find((d) => dubblettNyckel(d) === nyckel);
     if (!dryck) {
       dryck = await db.dryck.create({
         data: {
           namn: v.namn, producent: v.producent, typ: "vin", kategori: v.kategori, druvor: v.druvor, land: v.land, region: v.region,
-          prisCa: v.prisCa, prisUppskattat: v.prisCa != null, aromer: v.doft, mat: [v.mat], beskrivning: v.stil, kalla: "ai",
+          prisCa: v.prisCa, prisUppskattat: v.prisCa != null, aromer: v.doft, mat: [v.mat], beskrivning: v.stil, kalla: "ai", agareId: anv.id,
           sok: sokText({ namn: v.namn, producent: v.producent, region: v.region, land: v.land, druvor: v.druvor }),
         },
         select: { id: true, namn: true, producent: true, argang: true },
       });
     }
-    await db.betyg.create({ data: { dryckId: dryck.id, provningId, betyg: rad.betyg, kommentar: rad.kommentar || null, tillfalle: prov.titel, datum: prov.datum ?? new Date() } });
+    await db.betyg.create({ data: { anvandareId: anv.id, dryckId: dryck.id, provningId, betyg: rad.betyg, kommentar: rad.kommentar || null, tillfalle: prov.titel, datum: prov.datum ?? new Date() } });
     antal++;
   }
   revalidatePath(`/provning/${provningId}`);

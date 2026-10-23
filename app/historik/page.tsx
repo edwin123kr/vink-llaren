@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { kravAnvandare } from "@/lib/auth";
 import { kategori } from "@/lib/kategorier";
 import { betygText, datum } from "@/lib/format";
 import { PageHeader } from "@/components/Page";
@@ -10,7 +11,9 @@ export const metadata: Metadata = { title: "Historik" };
 export const dynamic = "force-dynamic";
 
 export default async function Historik() {
+  const anv = await kravAnvandare();
   const betyg = await db.betyg.findMany({
+    where: { anvandareId: anv.id },
     orderBy: { datum: "desc" },
     include: { dryck: { select: { namn: true, kategori: true, producent: true } }, flaska: { select: { id: true } } },
     take: 500,

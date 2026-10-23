@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { kravAnvandare } from "@/lib/auth";
 import { betygText, kr, lista } from "@/lib/format";
 import { Icon } from "@/components/Icon";
 import { PageHeader } from "@/components/Page";
@@ -9,13 +10,14 @@ import { SamlingVy, type SamlingRad } from "@/components/SamlingVy";
 export const dynamic = "force-dynamic";
 
 export default async function Samling() {
+  const anv = await kravAnvandare();
   const [flaskor, betyg] = await Promise.all([
     db.flaska.findMany({
-      where: { antal: { gt: 0 } },
+      where: { anvandareId: anv.id, antal: { gt: 0 } },
       include: { dryck: { select: { namn: true, producent: true, kategori: true, typ: true, land: true, region: true, argang: true, druvor: true, bildUrl: true, kalla: true, prisCa: true } } },
       orderBy: { skapad: "desc" },
     }),
-    db.betyg.groupBy({ by: ["dryckId"], _avg: { betyg: true } }),
+    db.betyg.groupBy({ by: ["dryckId"], where: { anvandareId: anv.id }, _avg: { betyg: true } }),
   ]);
   const snitt = new Map(betyg.map((b) => [b.dryckId, b._avg.betyg == null ? null : Math.round(b._avg.betyg)]));
   const rader: SamlingRad[] = flaskor.map((f) => ({

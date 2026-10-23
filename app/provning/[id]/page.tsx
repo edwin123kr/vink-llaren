@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { kravAnvandare } from "@/lib/auth";
 import type { Provningsforslag } from "@/lib/ai";
 import { kategori } from "@/lib/kategorier";
 import { inkopslista, kalkyl } from "@/lib/provning";
@@ -16,7 +17,8 @@ export const metadata: Metadata = { title: "Vinprovning" };
 export const dynamic = "force-dynamic";
 
 export default async function ProvningSida({ params }: PageProps<"/provning/[id]">) {
-  const p = await db.provning.findUnique({ where: { id: (await params).id }, include: { _count: { select: { betyg: true } } } });
+  const anv = await kravAnvandare();
+  const p = await db.provning.findFirst({ where: { id: (await params).id, anvandareId: anv.id }, include: { _count: { select: { betyg: true } } } });
   if (!p) notFound();
   const f = p.forslag as (Provningsforslag & { lage?: "mock" | "live" }) | null;
   const k = kalkyl({ deltagare: p.deltagare, antalViner: p.antalViner, budgetPerPerson: p.budgetPerPerson });

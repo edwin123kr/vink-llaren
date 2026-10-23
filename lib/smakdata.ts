@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
+import { synligaDrycker } from "@/lib/auth";
 import { betygText, lista } from "@/lib/format";
 import { kategori as katNamn, type Typ } from "@/lib/kategorier";
 import { DIM, GILLAR, GILLAR_MINDRE, grupper, kandidater, medelprofil, otestade, undvikKandidater, type BetygadDryck, type KatalogDryck } from "@/lib/smak";
@@ -8,8 +9,8 @@ import type { SmakUnderlag } from "@/lib/ai";
 const PROFIL = { fyllighet: true, sotma: true, syra: true, stravhet: true, rokighet: true } as const;
 
 /** Allt betygsatt, med snittbetyg per dryck. */
-export async function hamtaBetygade(): Promise<BetygadDryck[]> {
-  const rader = await db.betyg.groupBy({ by: ["dryckId"], _avg: { betyg: true }, _count: { _all: true } });
+export async function hamtaBetygade(anvandareId: string): Promise<BetygadDryck[]> {
+  const rader = await db.betyg.groupBy({ by: ["dryckId"], where: { anvandareId }, _avg: { betyg: true }, _count: { _all: true } });
   if (!rader.length) return [];
   const drycker = await db.dryck.findMany({
     where: { id: { in: rader.map((r) => r.dryckId) } },
@@ -30,9 +31,9 @@ export async function hamtaBetygade(): Promise<BetygadDryck[]> {
   }));
 }
 
-export async function hamtaKatalog(typ: Typ): Promise<KatalogDryck[]> {
+export async function hamtaKatalog(anvandareId: string, typ: Typ): Promise<KatalogDryck[]> {
   const d = await db.dryck.findMany({
-    where: { typ },
+    where: { typ, ...synligaDrycker(anvandareId) },
     select: { id: true, namn: true, producent: true, typ: true, kategori: true, druvor: true, land: true, region: true, prisCa: true, ...PROFIL },
     take: 20000,
   });
@@ -40,8 +41,8 @@ export async function hamtaKatalog(typ: Typ): Promise<KatalogDryck[]> {
 }
 
 /** Lokala siffror för sidan och underlaget till AI:n. */
-export async function smakdata(typ: Typ) {
-  const [alla, katalog] = await Promise.all([hamtaBetygade(), hamtaKatalog(typ)]);
+export async function smakdata(anvandareId: string, typ: Typ) {
+  const [alla, katalog] = await Promise.all([hamtaBetygade(anvandareId), hamtaKatalog(anvandareId, typ)]);
   const egna = alla.filter((d) => d.typ === typ);
   const dims = DIM[typ];
   const gillar = egna.filter((d) => d.snitt >= GILLAR);

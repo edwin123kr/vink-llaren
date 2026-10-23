@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { kravAnvandare, synligaDrycker } from "@/lib/auth";
 import { KALLOR } from "@/lib/katalog";
 import { PageHeader } from "@/components/Page";
 
@@ -7,7 +8,8 @@ export const metadata: Metadata = { title: "Källor och licenser" };
 export const dynamic = "force-dynamic";
 
 export default async function Kallor() {
-  const per = await db.dryck.groupBy({ by: ["kalla"], _count: { _all: true } });
+  const anv = await kravAnvandare();
+  const per = await db.dryck.groupBy({ by: ["kalla"], where: synligaDrycker(anv.id), _count: { _all: true } });
   const antal = new Map(per.map((p) => [p.kalla, p._count._all]));
   return (
     <>

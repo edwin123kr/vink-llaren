@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { kravAnvandare } from "@/lib/auth";
 import { kategori } from "@/lib/kategorier";
 import { betygText, drickfonster, kr, lista } from "@/lib/format";
 import { perKategori, prisvardast, samlingsvarde, snittPer, type StatBetyg } from "@/lib/statistik";
@@ -23,9 +24,10 @@ function Stapel({ andel, etikett, varde }: { andel: number; etikett: string; var
 }
 
 export default async function Statistik() {
+  const anv = await kravAnvandare();
   const [flaskor, betygRader] = await Promise.all([
-    db.flaska.findMany({ where: { antal: { gt: 0 } }, include: { dryck: { select: { id: true, namn: true, kategori: true, prisCa: true } } } }),
-    db.betyg.findMany({ include: { dryck: { select: { id: true, namn: true, druvor: true, land: true, prisCa: true, flaskor: { select: { inkopspris: true }, take: 1, orderBy: { skapad: "desc" } } } } } }),
+    db.flaska.findMany({ where: { anvandareId: anv.id, antal: { gt: 0 } }, include: { dryck: { select: { id: true, namn: true, kategori: true, prisCa: true } } } }),
+    db.betyg.findMany({ where: { anvandareId: anv.id }, include: { dryck: { select: { id: true, namn: true, druvor: true, land: true, prisCa: true, flaskor: { where: { anvandareId: anv.id }, select: { inkopspris: true }, take: 1, orderBy: { skapad: "desc" } } } } } }),
   ]);
   const sf = flaskor.map((f) => ({ antal: f.antal, inkopspris: f.inkopspris, prisCa: f.dryck.prisCa, kategori: f.dryck.kategori, drickFran: f.drickFran, drickTill: f.drickTill }));
   const v = samlingsvarde(sf);

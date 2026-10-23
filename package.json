@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "prisma migrate deploy && next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "test": "vitest run",
@@ -13,7 +13,8 @@
     "db:seed": "prisma db seed",
     "db:demo:rensa": "tsx scripts/rensa-demo.mts",
     "db:studio": "prisma studio",
-    "import": "tsx scripts/import/index.mts"
+    "import": "tsx scripts/import/index.mts",
+    "konto": "tsx scripts/konto.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.2.0",

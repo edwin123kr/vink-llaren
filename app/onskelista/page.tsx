@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { kravAnvandare } from "@/lib/auth";
 import { datum, kr } from "@/lib/format";
 import { OnskeForm } from "@/components/OnskeForm";
 import { PageHeader } from "@/components/Page";
@@ -10,7 +11,8 @@ export const metadata: Metadata = { title: "Önskelista" };
 export const dynamic = "force-dynamic";
 
 export default async function Onskelista() {
-  const lista = await db.onskning.findMany({ orderBy: { skapad: "desc" }, include: { dryck: { select: { id: true, producent: true, region: true, land: true } } } });
+  const anv = await kravAnvandare();
+  const lista = await db.onskning.findMany({ where: { anvandareId: anv.id }, orderBy: { skapad: "desc" }, include: { dryck: { select: { id: true, producent: true, region: true, land: true } } } });
   const summa = lista.reduce((a, o) => a + (o.prisCa ?? 0), 0);
   return (
     <>

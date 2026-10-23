@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { KATEGORIER, SMAK, typFor } from "@/lib/kategorier";
 import { parseDecimal } from "@/lib/format";
@@ -86,9 +86,13 @@ export function DryckForm({
         return;
       }
       setFel(res.fel);
-      requestAnimationFrame(() => felRuta.current?.focus());
     });
   };
+
+  // flytta fokus till felsummeringen när den har ritats ut (för skärmläsare och tangentbord)
+  useEffect(() => {
+    if (Object.keys(fel).length) felRuta.current?.focus();
+  }, [fel]);
 
   const felLista = Object.entries(fel);
   const inp = (k: keyof DryckState, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (

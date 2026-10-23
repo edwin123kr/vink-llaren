@@ -3,22 +3,25 @@ import { skapaBackup } from "@/lib/backup";
 import { tillCsv } from "@/lib/csv";
 import { kategori } from "@/lib/kategorier";
 import { lista } from "@/lib/format";
+import { EJ_INLOGGAD, hamtaAnvandare } from "@/lib/auth";
 
 const dag = () => new Date().toISOString().slice(0, 10);
 
 export async function GET(req: Request) {
+  const anv = await hamtaAnvandare();
+  if (!anv) return EJ_INLOGGAD();
   const u = new URL(req.url);
   const format = u.searchParams.get("format") ?? "json";
 
   if (format === "json") {
-    const b = await skapaBackup(u.searchParams.get("bilder") !== "0");
+    const b = await skapaBackup(anv.id, u.searchParams.get("bilder") !== "0");
     return new Response(JSON.stringify(b, null, 2), {
       headers: { "content-type": "application/json; charset=utf-8", "content-disposition": `attachment; filename="vinkallaren-backup-${dag()}.json"` },
     });
   }
 
   if (format === "csv" && u.searchParams.get("typ") === "historik") {
-    const betyg = await db.betyg.findMany({ orderBy: { datum: "desc" }, include: { dryck: true } });
+    const betyg = await db.betyg.findMany({ where: { anvandareId: anv.id }, orderBy: { datum: "desc" }, include: { dryck: true } });
     const csv = tillCsv(
       ["Datum", "Namn", "Producent", "Kategori", "Årgång", "Betyg", "Kommentar", "Tillfälle"],
       betyg.map((b) => [b.datum.toISOString().slice(0, 10), b.dryck.namn, b.dryck.producent, kategori(b.dryck.kategori)?.namn, b.dryck.argang, b.betyg / 10, b.kommentar, b.tillfalle]),
@@ -27,7 +30,7 @@ export async function GET(req: Request) {
   }
 
   if (format === "csv") {
-    const flaskor = await db.flaska.findMany({ orderBy: { skapad: "desc" }, include: { dryck: true } });
+    const flaskor = await db.flaska.findMany({ where: { anvandareId: anv.id }, orderBy: { skapad: "desc" }, include: { dryck: true } });
     const csv = tillCsv(
       ["Namn", "Producent", "Kategori", "Druvor", "Land", "Region", "Årgång", "Alkoholhalt", "Volym (ml)", "Antal", "Inköpspris", "Inköpsdatum", "Inköpsställe", "Förvaringsplats", "Drick från", "Drick till", "EAN", "Systembolaget artikelnr", "Anteckningar"],
       flaskor.map((f) => [

@@ -1,5 +1,5 @@
-import type { DryckForslag, EtikettSvar, Smakanalys } from "./schemas";
-import type { SmakUnderlag } from "./index";
+import type { DryckForslag, EtikettSvar, Provningsforslag, Smakanalys } from "./schemas";
+import type { ProvningUnderlag, SmakUnderlag } from "./types";
 
 /**
  * Låtsasläge: deterministiska svar så att flöden kan byggas och testas utan API-nyckel.
@@ -77,5 +77,28 @@ export function mockSmakanalys(u: SmakUnderlag): Smakanalys {
       ...u.otestade.regioner.slice(0, 1).map((n) => ({ typ: "region" as const, namn: n, varfor: "Låtsasläge: en region du inte har testat.", instegsflaska: `Ett enkelt vin från ${n}`, ungefarligtPris: null })),
     ],
     undvik: u.lagaBetyg.slice(0, 2).map((g) => ({ stil: g.namn, varfor: `Du har gett det i snitt ${g.snitt} på ${g.antal} betyg.` })),
+  };
+}
+
+const MOCK_STILAR: Omit<Provningsforslag["viner"][number], "namn" | "prisCa">[] = [
+  { producent: null, kategori: "mousserande", druvor: ["Chardonnay"], land: null, region: null, stil: "Torrt och friskt", varfor: "Låtsasläge: en mousserande start väcker smaklökarna.", doft: ["citrus", "brioche", "grönt äpple"], smak: ["hög syra", "fin mousse", "mineral"], serverTemp: "6–8 °C", mat: "Salta snacks" },
+  { producent: null, kategori: "vitt", druvor: ["Riesling"], land: null, region: null, stil: "Lätt och aromatiskt", varfor: "Låtsasläge: ett lätt vitt före de tyngre vinerna.", doft: ["lime", "persika", "blommor"], smak: ["frisk syra", "lätt sötma", "lång eftersmak"], serverTemp: "8–10 °C", mat: "Skaldjur" },
+  { producent: null, kategori: "vitt", druvor: ["Chardonnay"], land: null, region: null, stil: "Fylligt och fatlagrat", varfor: "Låtsasläge: visar hur ek påverkar ett vitt vin.", doft: ["smör", "vanilj", "gul frukt"], smak: ["rund", "krämig", "nötig"], serverTemp: "10–12 °C", mat: "Kyckling i gräddsås" },
+  { producent: null, kategori: "rott", druvor: ["Pinot Noir"], land: null, region: null, stil: "Lätt och bärigt", varfor: "Låtsasläge: ett lätt rött som brygga mellan vitt och tungt rött.", doft: ["hallon", "körsbär", "jord"], smak: ["mjuka tanniner", "frisk syra", "röda bär"], serverTemp: "14–16 °C", mat: "Anka" },
+  { producent: null, kategori: "rott", druvor: ["Cabernet Sauvignon"], land: null, region: null, stil: "Kraftigt och strävt", varfor: "Låtsasläge: ett tyngre rött mot slutet.", doft: ["svarta vinbär", "ceder", "tobak"], smak: ["fasta tanniner", "mörk frukt", "lång eftersmak"], serverTemp: "16–18 °C", mat: "Grillat nötkött" },
+  { producent: null, kategori: "sott", druvor: ["Sémillon"], land: null, region: null, stil: "Sött och fylligt", varfor: "Låtsasläge: sött vin avslutar provningen.", doft: ["honung", "aprikos", "saffran"], smak: ["sötma", "syra som balans", "marmelad"], serverTemp: "8–10 °C", mat: "Blåmögelost" },
+];
+
+export function mockProvning(u: ProvningUnderlag): Provningsforslag {
+  const n = u.antalViner;
+  const index = n >= MOCK_STILAR.length ? MOCK_STILAR.map((_, i) => i) : Array.from({ length: n }, (_, i) => Math.round((i * (MOCK_STILAR.length - 1)) / Math.max(1, n - 1)));
+  const viner = Array.from({ length: n }, (_, i) => {
+    const s = MOCK_STILAR[index[i] ?? i % MOCK_STILAR.length];
+    return { ...s, namn: `Låtsasvin ${i + 1}: ${s.stil.toLowerCase()} (${s.druvor[0]})`, prisCa: Math.max(79, Math.round(u.budgetPerFlaska * (0.8 + (i % 3) * 0.1))) };
+  });
+  return {
+    inledning: `Låtsasläge: ett exempel på upplägg för ${u.deltagare} personer${u.tema ? ` med temat "${u.tema}"` : ""}. Byt till AI_MODE=live för riktiga vinförslag.`,
+    ordningMotivering: "Mousserande först, vitt före rött, lätt före tungt och sött sist.",
+    viner,
   };
 }

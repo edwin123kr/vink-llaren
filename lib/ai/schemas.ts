@@ -56,3 +56,29 @@ export const Smakanalys = z.object({
   undvik: z.array(z.object({ stil: z.string(), varfor: z.string() })).describe("0–3 stilar med konsekvent låga betyg; tom lista om underlaget saknas"),
 });
 export type Smakanalys = z.infer<typeof Smakanalys>;
+
+/** Förslag till vinprovning, i provningsordning. */
+export const Provningsforslag = z.object({
+  inledning: z.string().describe("2–3 meningar om provningens upplägg och tema"),
+  ordningMotivering: z.string().describe("1–2 meningar om varför ordningen är som den är"),
+  viner: z
+    .array(
+      z.object({
+        namn: z.string().describe("Konkret vin, gärna ett som brukar finnas på Systembolaget"),
+        producent: z.string().nullable(),
+        kategori: z.enum(["rott", "vitt", "rose", "mousserande", "sott", "starkvin"]),
+        druvor: z.array(z.string()),
+        land: z.string().nullable(),
+        region: z.string().nullable(),
+        prisCa: z.number().int().nullable().describe("Ungefärligt pris per flaska i kronor"),
+        stil: z.string().describe("Kort stilbeskrivning, t.ex. 'lätt och friskt'"),
+        varfor: z.string().describe("Varför vinet passar i provningen"),
+        doft: z.array(z.string()).describe("3–5 saker att dofta efter"),
+        smak: z.array(z.string()).describe("3–5 saker att smaka efter"),
+        serverTemp: z.string().describe("T.ex. '8–10 °C'"),
+        mat: z.string().describe("En konkret matmatchning"),
+      }),
+    )
+    .describe("Exakt det antal viner som efterfrågas, i provningsordning"),
+});
+export type Provningsforslag = z.infer<typeof Provningsforslag>;

@@ -160,3 +160,17 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ------------------------------------------------------------------ *
+ *  Utskrift (provningsprotokoll m.m.)
+ * ------------------------------------------------------------------ */
+.print-only { display: none; }
+@media print {
+  @page { margin: 12mm; }
+  html, body { background: #fff !important; color: #000 !important; }
+  body > nav, body > header, header.sticky, nav[aria-label="Huvudmeny"], .no-print, a[href="#main"] { display: none !important; }
+  main { padding: 0 !important; max-width: none !important; }
+  .print-only { display: block; }
+  .print-sida { break-after: page; border: none !important; box-shadow: none !important; }
+  .card { background: #fff !important; border-color: #999 !important; }
+}

@@ -1,10 +1,12 @@
 import "server-only";
 import { aiMode, strukturerat } from "./client";
-import { mockDryckForslag, mockEtikett, mockSmakanalys } from "./mock";
-import { DryckForslag, EtikettSvar, Smakanalys } from "./schemas";
+import { mockDryckForslag, mockEtikett, mockProvning, mockSmakanalys } from "./mock";
+import { DryckForslag, EtikettSvar, Provningsforslag, Smakanalys } from "./schemas";
 
 export { aiMode, aiModel, AiError } from "./client";
-export type { DryckForslag, EtikettSvar, Smakanalys } from "./schemas";
+export type { SmakUnderlag, ProvningUnderlag } from "./types";
+import type { SmakUnderlag, ProvningUnderlag } from "./types";
+export type { DryckForslag, EtikettSvar, Provningsforslag, Smakanalys } from "./schemas";
 
 const SYSTEM_DRYCK = `Du är en kunnig sommelier och spritexpert som hjälper en svensk användare att katalogisera sin vin- och spritsamling.
 Svara alltid på svenska. Fyll bara i uppgifter du har god grund för; använd null eller tomma listor hellre än att gissa.
@@ -41,17 +43,6 @@ export async function identifieraEtikett(base64: string, mediaType: BildTyp): Pr
   return { ...svar, lage: "live" };
 }
 
-export interface SmakUnderlag {
-  typ: "vin" | "sprit";
-  antalBetyg: number;
-  profilGillar: Record<string, number | null>;
-  profilMindre: Record<string, number | null>;
-  favoriter: { druvor: string[]; regioner: string[]; kategorier: string[] };
-  lagaBetyg: { namn: string; snitt: string; antal: number }[];
-  betyg: { namn: string; kategori: string; druvor: string[]; region: string | null; land: string | null; betyg: string }[];
-  kandidater: { id: string; namn: string; producent: string | null; kategori: string; druvor: string[]; region: string | null; land: string | null; prisCa: number | null }[];
-  otestade: { druvor: string[]; regioner: string[]; kategorier: string[] };
-}
 
 const SYSTEM_SMAK = `Du är en personlig sommelier som analyserar en svensk användares betyg (skala 0–10) på vin eller sprit.
 Svara på svenska, i du-form, konkret och utan överdrifter. Bygg bara på underlaget du får.
@@ -71,4 +62,28 @@ export async function analyseraSmak(u: SmakUnderlag): Promise<Smakanalys & { lag
     effort: "medium",
   });
   return { ...svar, rekommendationer: svar.rekommendationer.filter((r) => giltiga.has(r.id)).slice(0, 6), lage: "live" };
+}
+
+
+const SYSTEM_PROVNING = `Du är en erfaren sommelier som planerar vinprovningar för svenska privatpersoner.
+Svara på svenska. Föreslå bara vin (ingen sprit). Välj gärna viner som brukar finnas på Systembolaget, men hitta inte på produkter:
+föredra välkända producenter och viner, och skriv stilen tydligt så att användaren kan hitta ett likvärdigt alternativ.
+Ordna vinerna i provningsordning: mousserande först, sedan vitt före rött, lätt före tungt, och sött eller starkvin sist.
+Håll dig inom budgeten: summan av pris × antal flaskor per vin ska helst inte överstiga totalbudgeten.
+Om temat är blindprovning: välj viner med tydliga skillnader och skriv vad deltagarna kan gissa på.`;
+
+export async function planeraProvning(u: ProvningUnderlag): Promise<Provningsforslag & { lage: "mock" | "live" }> {
+  if (aiMode() === "mock") return { ...mockProvning(u), lage: "mock" };
+  const svar = await strukturerat({
+    schema: Provningsforslag,
+    system: SYSTEM_PROVNING,
+    content: [
+      {
+        type: "text",
+        text: `Planera en vinprovning.\nDeltagare: ${u.deltagare}\nAntal viner: ${u.antalViner}\nBudget per person: ${u.budgetPerPerson} kr (totalt ${u.totalbudget} kr, ungefär ${u.budgetPerFlaska} kr per flaska i snitt)\nFlaskor per vin i ordning: ${u.flaskorPerVin.join(", ")}\nTema: ${u.tema ?? "fritt"}\n${u.favoriter.length ? `Värdens favoritstilar: ${u.favoriter.join(", ")}\n` : ""}Ge exakt ${u.antalViner} viner.`,
+      },
+    ],
+    effort: "medium",
+  });
+  return { ...svar, viner: svar.viner.slice(0, u.antalViner), lage: "live" };
 }

@@ -15,6 +15,8 @@ const PATHS = {
   bok: "M5 4h10a4 4 0 0 1 4 4v12H9a4 4 0 0 1-4-4zM5 16a4 4 0 0 1 4-4h10",
   pil: "M9 6l6 6-6 6",
   person: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
+  prata: "M4 5h16v11H10l-5 4v-4H4zM8 9h8M8 12h5",
+  skicka: "M4 12l16-8-6 16-2-7z",
   flaska: "M10 3h4v4l2 3v11H8V10l2-3zM8 14h8",
 } as const;
 

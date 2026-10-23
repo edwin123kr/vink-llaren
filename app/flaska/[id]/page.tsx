@@ -83,6 +83,12 @@ export default async function FlaskSida({ params }: PageProps<"/flaska/[id]">) {
 
           <div className="mt-5 flex flex-col gap-4">
             <DrackDenKnapp flaskaId={f.id} namn={d.namn} antal={f.antal} />
+            <Link
+              href={`/sommelier?fraga=${encodeURIComponent(`Berätta om ${d.namn}${d.argang ? ` ${d.argang}` : ""}${d.producent ? ` från ${d.producent}` : ""}: vad passar till, hur ska den serveras och när är den som bäst?`)}`}
+              className="btn"
+            >
+              <Icon name="prata" size={18} /> Fråga sommeliern om flaskan
+            </Link>
             <FlaskAtgarder id={f.id} antal={f.antal} />
           </div>
         </div>

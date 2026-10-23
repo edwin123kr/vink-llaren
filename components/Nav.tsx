@@ -4,15 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "./Icon";
 
-const ITEMS: { href: string; label: string; icon: IconName; extra?: string }[] = [
-  { href: "/", label: "Samling", icon: "samling" },
-  { href: "/smakprofil", label: "Smakprofil", icon: "smak" },
-  { href: "/provning", label: "Provning", icon: "glas" },
-  { href: "/mer", label: "Mer", icon: "mer", extra: " verktyg och inställningar" },
-];
+type Item = { href: string; label: string; icon: IconName; extra?: string };
+const SAMLING: Item = { href: "/", label: "Samling", icon: "samling" };
+const SMAK: Item = { href: "/smakprofil", label: "Smakprofil", icon: "smak" };
+const SOMMELIER: Item = { href: "/sommelier", label: "Sommelier", icon: "prata", extra: ", fråga AI" };
+const PROVNING: Item = { href: "/provning", label: "Provning", icon: "glas" };
+const MER: Item = { href: "/mer", label: "Mer", icon: "mer", extra: " verktyg och inställningar" };
+const ITEMS = [SAMLING, SMAK, SOMMELIER, PROVNING, MER];
+// I mobilmenyn ryms fyra flikar runt "+"; provningen nås då via Mer.
+const MOBIL_VANSTER = [SAMLING, SMAK];
+const MOBIL_HOGER = [SOMMELIER, MER];
+const UNDER_MER = ["/mer", "/provning", "/statistik", "/onskelista", "/historik"];
 
-function isActive(path: string, href: string) {
-  return href === "/" ? path === "/" || path.startsWith("/flaska") : path.startsWith(href);
+function isActive(path: string, href: string, mobil = false) {
+  if (href === "/") return path === "/" || path.startsWith("/flaska");
+  if (mobil && href === "/mer") return UNDER_MER.some((p) => path.startsWith(p));
+  return path.startsWith(href);
 }
 
 /** Mobil: bottenmeny med en upphöjd "+"-knapp i mitten. Desktop: toppmeny med knapp. */
@@ -20,10 +27,8 @@ export function Nav() {
   const path = usePathname();
   // ingen meny på inloggningssidorna
   if (path.startsWith("/logga-in") || path.startsWith("/skapa-konto")) return null;
-  const left = ITEMS.slice(0, 2);
-  const right = ITEMS.slice(2);
-  const link = (i: (typeof ITEMS)[number]) => {
-    const active = isActive(path, i.href);
+  const link = (i: Item) => {
+    const active = isActive(path, i.href, true);
     return (
       <Link
         key={i.href}
@@ -78,7 +83,7 @@ export function Nav() {
         style={{ paddingBottom: "var(--safe-b)" }}
       >
         <div className="mx-auto flex h-[var(--nav-h)] max-w-lg items-stretch px-2">
-          {left.map(link)}
+          {MOBIL_VANSTER.map(link)}
           <div className="flex flex-1 items-start justify-center">
             <Link
               href="/lagg-till"
@@ -88,7 +93,7 @@ export function Nav() {
               <Icon name="plus" size={30} />
             </Link>
           </div>
-          {right.map(link)}
+          {MOBIL_HOGER.map(link)}
         </div>
       </nav>
     </>

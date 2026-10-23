@@ -10,6 +10,7 @@ export const metadata: Metadata = { title: "Mer" };
 export const dynamic = "force-dynamic";
 
 const RADER: { icon: IconName; title: string; text: string; fas: number; href?: string }[] = [
+  { icon: "glas", title: "Vinprovning", text: "Planera en provning med inköpslista och protokoll", fas: 5, href: "/provning" },
   { icon: "person", title: "Mitt konto", text: "Logga ut, byt lösenord eller radera kontot", fas: 0, href: "/mer/konto" },
   { icon: "hjarta", title: "Önskelista", text: "Flaskor du vill köpa", fas: 4, href: "/onskelista" },
   { icon: "bok", title: "Historik", text: "Alla betyg, senast först", fas: 2, href: "/historik" },

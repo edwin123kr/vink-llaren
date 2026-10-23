@@ -1,0 +1,10 @@
+node_modules
+.next
+.data
+.git
+.env
+*.db
+*.db-journal
+data/import-logs
+lib/generated
+.claude

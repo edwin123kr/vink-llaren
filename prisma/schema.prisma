@@ -178,6 +178,7 @@ model Anvandare {
   provningar   Provning[]
   smakanalyser Smakanalys[]
   aiAnrop      AiAnrop[]
+  samtals      Samtal[]
 }
 
 /// Inloggning. Kakan innehåller en slumpad token; här lagras bara dess SHA-256.
@@ -200,4 +201,29 @@ model AiAnrop {
   skapad      DateTime  @default(now())
 
   @@index([anvandareId, skapad])
+}
+
+/// Ett samtal med AI-sommeliern.
+model Samtal {
+  id          String       @id @default(cuid())
+  anvandareId String
+  anvandare   Anvandare    @relation(fields: [anvandareId], references: [id], onDelete: Cascade)
+  titel       String
+  skapad      DateTime     @default(now())
+  uppdaterad  DateTime     @updatedAt
+  meddelanden Meddelande[]
+
+  @@index([anvandareId, uppdaterad])
+}
+
+model Meddelande {
+  id       String   @id @default(cuid())
+  samtalId String
+  samtal   Samtal   @relation(fields: [samtalId], references: [id], onDelete: Cascade)
+  roll     String // "user" | "assistant"
+  text     String
+  kallor   Json? // [{ titel, url }] från webbsökningen
+  skapad   DateTime @default(now())
+
+  @@index([samtalId, skapad])
 }

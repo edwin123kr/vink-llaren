@@ -26,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="sv" className={`${inter.variable} ${cormorant.variable}`}>
       <body>
-        <a href="#main" className="btn btn-gold fixed left-3 top-3 z-50 -translate-y-24 focus:translate-y-0">
+        <a href="#main" className="btn btn-gold sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50">
           Hoppa till innehåll
         </a>
         <Pwa />

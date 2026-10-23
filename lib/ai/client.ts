@@ -27,7 +27,7 @@ export class AiError extends Error {
 }
 
 let client: Anthropic | null = null;
-function getClient(): Anthropic {
+export function getClient(): Anthropic {
   if (!process.env.ANTHROPIC_API_KEY) {
     throw new AiError("ANTHROPIC_API_KEY saknas. Lägg till den i .env eller använd AI_MODE=mock.", "config");
   }

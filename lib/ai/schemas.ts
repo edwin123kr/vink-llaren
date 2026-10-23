@@ -33,3 +33,26 @@ export const EtikettSvar = DryckForslag.extend({
   lastText: z.string().describe("Den text du kan läsa på etiketten, ordagrant och kort"),
 });
 export type EtikettSvar = z.infer<typeof EtikettSvar>;
+
+/** Smakanalys för vin eller sprit. Rekommendationer pekar bara på id:n ur den skickade kandidatlistan. */
+export const Smakanalys = z.object({
+  sammanfattning: z.string().describe("3–5 meningar på svenska, i du-form, om vad användaren gillar och inte gillar"),
+  gillar: z.array(z.string()).describe("2–5 korta punkter om stilar/egenskaper användaren uppskattar"),
+  mindreForstjust: z.array(z.string()).describe("0–4 korta punkter om det användaren uppskattar mindre"),
+  rekommendationer: z
+    .array(z.object({ id: z.string().describe("id ur kandidatlistan"), motivering: z.string().describe("1–2 meningar: varför den passar just den här smaken") }))
+    .describe("3–6 rekommendationer, endast id:n ur kandidatlistan"),
+  utforska: z
+    .array(
+      z.object({
+        typ: z.enum(["druva", "region", "spritsort"]),
+        namn: z.string(),
+        varfor: z.string().describe("1–2 meningar om varför det kan passa"),
+        instegsflaska: z.string().describe("En konkret, lättillgänglig flaska eller stil att börja med"),
+        ungefarligtPris: z.number().int().nullable().describe("Ungefärligt pris i kronor, eller null"),
+      }),
+    )
+    .describe("3–5 saker användaren aldrig testat, helst bland de otestade som skickades"),
+  undvik: z.array(z.object({ stil: z.string(), varfor: z.string() })).describe("0–3 stilar med konsekvent låga betyg; tom lista om underlaget saknas"),
+});
+export type Smakanalys = z.infer<typeof Smakanalys>;

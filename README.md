@@ -12,7 +12,7 @@ person och körs lokalt.
 | 1 | Katalog och importskript (X-Wines, Open Food Facts) | Klar |
 | 2 | Samlingen: lista, filter, detaljvy, lägga till, "Drack den" + betyg | Klar |
 | 3 | AI-ifyllning, etikettfoto, streckkodsskanning | Klar |
-| 4 | Smakprofil-AI och önskelista | |
+| 4 | Smakprofil-AI och önskelista | Klar |
 | 5 | Vinprovning | |
 | 6 | Statistik, export och import | |
 | 7 | PWA/offline och slutputs | |

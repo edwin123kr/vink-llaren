@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@/lib/db";
 import { synligaDrycker } from "@/lib/auth";
+import { gemensamtBetyg } from "@/lib/gemenskap";
 import { normalisera } from "@/lib/sok";
 import type { Prisma } from "@/lib/generated/prisma/client";
 
@@ -27,13 +28,14 @@ export async function sokKatalog(anvandareId: string, q: string, opts: { kategor
   });
   // enkel rankning: namnet börjar med sökordet först, sedan kortare namn
   const forsta = ord[0] ?? "";
-  return traffar
+  const valda = traffar
     .map((t) => ({ t, poang: (normalisera(t.namn).startsWith(forsta) ? 0 : 1) * 1000 + t.namn.length }))
     .sort((a, b) => a.poang - b.poang)
-    .slice(0, opts.limit ?? 20)
-    .map(({ t }) => {
-      const { sok: _sok, ...rest } = t;
-      void _sok;
-      return rest;
-    });
+    .slice(0, opts.limit ?? 20);
+  const betyg = await gemensamtBetyg(valda.map(({ t }) => t.id));
+  return valda.map(({ t }) => {
+    const { sok: _sok, ...rest } = t;
+    void _sok;
+    return { ...rest, betyg: betyg.get(t.id) ?? null };
+  });
 }

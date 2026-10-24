@@ -166,11 +166,13 @@ model Bild {
 
 /// Ett konto. Lösenordet lagras som scrypt-hash (salt:hash).
 model Anvandare {
-  id           String   @id @default(cuid())
-  epost        String   @unique // gemener
-  namn         String
-  losenordHash String
-  skapad       DateTime @default(now())
+  id              String   @id @default(cuid())
+  epost           String   @unique // gemener
+  namn            String
+  losenordHash    String
+  /// Om kommentarer i betygen visas för andra (med förnamn). Betyget räknas alltid in anonymt i snittet.
+  delaKommentarer Boolean  @default(true)
+  skapad          DateTime @default(now())
 
   sessioner    Session[]
   drycker      Dryck[]

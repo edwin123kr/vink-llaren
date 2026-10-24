@@ -94,3 +94,8 @@ export async function raderaKonto(_prev: KontoState, form: FormData): Promise<Ko
   await avslutaSession();
   redirect("/logga-in?raderat=1");
 }
+
+export async function sattDelaKommentarer(dela: boolean) {
+  const anv = await kravAnvandare();
+  await db.anvandare.update({ where: { id: anv.id }, data: { delaKommentarer: dela } });
+}

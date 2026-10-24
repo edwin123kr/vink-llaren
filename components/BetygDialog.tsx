@@ -124,6 +124,7 @@ export function BetygDialog({
         <label className="block">
           <span className="mb-1.5 block text-sm text-muted">Kommentar (valfri)</span>
           <textarea className="input min-h-20" value={kommentar} onChange={(e) => setKommentar(e.target.value)} maxLength={1000} placeholder="Vad tyckte du?" />
+          <span className="mt-1 block text-xs text-muted">Betyget räknas in i Vinkällarens snitt. Kommentaren visas för andra med ditt förnamn (ändras under Mitt konto).</span>
         </label>
         <label className="block">
           <span className="mb-1.5 block text-sm text-muted">Tillfälle eller mat (valfritt)</span>

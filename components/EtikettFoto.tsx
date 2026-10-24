@@ -6,6 +6,7 @@ import { kategori } from "@/lib/kategorier";
 import { tillDryckState, type DryckState } from "@/lib/formstate";
 import { NyFlaskaForm } from "./Formular";
 import { Icon } from "./Icon";
+import { forminska } from "@/lib/forminska";
 
 interface Svar {
   lage: "mock" | "live";
@@ -17,17 +18,6 @@ interface Svar {
 }
 
 const SAKERHET = { hog: "Hög säkerhet", medel: "Medelsäker", lag: "Osäker: kontrollera noga" };
-
-/** Förminskar bilden i webbläsaren (max 1568 px) så att uppladdningen går snabbt och kostar färre tokens. */
-async function forminska(fil: File): Promise<Blob> {
-  const bmp = await createImageBitmap(fil);
-  const skala = Math.min(1, 1568 / Math.max(bmp.width, bmp.height));
-  const c = document.createElement("canvas");
-  c.width = Math.round(bmp.width * skala);
-  c.height = Math.round(bmp.height * skala);
-  c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
-  return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error("Kunde inte läsa bilden."))), "image/jpeg", 0.85));
-}
 
 export function EtikettFoto() {
   const kamera = useRef<HTMLInputElement>(null);
@@ -107,7 +97,7 @@ export function EtikettFoto() {
                 <ul className="mt-2 grid gap-2">
                   {svar.traffar.map((t) => (
                     <li key={t.id}>
-                      <Link href={`/lagg-till/katalog/${t.id}`} className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-line px-3 hover:border-muted">
+                      <Link href={`/lagg-till/katalog/${t.id}?bild=${encodeURIComponent(svar.bildUrl)}`} className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-line px-3 hover:border-muted">
                         <span className="truncate">{t.namn}{t.argang ? ` ${t.argang}` : ""} <span className="text-sm text-muted">· {[kategori(t.kategori)?.namn, t.producent].filter(Boolean).join(" · ")}</span></span>
                         <Icon name="pil" className="shrink-0 text-muted" />
                       </Link>

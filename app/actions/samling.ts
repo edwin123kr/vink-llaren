@@ -6,6 +6,7 @@ import { kravAnvandare, synligaDrycker } from "@/lib/auth";
 import { typFor } from "@/lib/kategorier";
 import { dubblettNyckel, normalisera, sokText } from "@/lib/sok";
 import { aiMode } from "@/lib/ai";
+import { satBildOmSaknas } from "@/lib/bilder";
 import { BetygIn, DryckIn, FlaskaIn, faltFel, type FaltFel } from "@/lib/validering";
 
 export type Resultat = { ok: true; id: string } | { ok: false; fel: FaltFel };
@@ -26,13 +27,15 @@ function uppdatera(id?: string) {
 }
 
 /** Ny flaska av en dryck som redan finns i katalogen. */
-export async function laggTillFranKatalog(dryckId: string, flaska: unknown): Promise<Resultat> {
+export async function laggTillFranKatalog(dryckId: string, flaska: unknown, bildUrl?: string | null): Promise<Resultat> {
   const anv = await kravAnvandare();
   const f = FlaskaIn.safeParse(flaska);
   if (!f.success) return { ok: false, fel: faltFel(f.error) };
   const dryck = await db.dryck.findFirst({ where: { id: dryckId, ...synligaDrycker(anv.id) }, select: { id: true } });
   if (!dryck) return { ok: false, fel: { _: "Drycken finns inte längre i katalogen." } };
   const ny = await db.flaska.create({ data: { ...flaskaData(f.data), dryckId, anvandareId: anv.id } });
+  // ett etikettfoto som togs när flaskan identifierades blir katalogens bild om den saknar en
+  if (bildUrl) await satBildOmSaknas(dryckId, bildUrl, anv.id);
   uppdatera();
   return { ok: true, id: ny.id };
 }

@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { kategori } from "@/lib/kategorier";
-import { kr } from "@/lib/format";
+import { betygText, kr } from "@/lib/format";
 import { FlaskBild } from "./FlaskBild";
 import { Icon } from "./Icon";
 
-interface Traff { id: string; namn: string; producent: string | null; kategori: string; land: string | null; region: string | null; argang: number | null; prisCa: number | null; bildUrl: string | null; kalla: string }
+interface Traff { id: string; namn: string; producent: string | null; kategori: string; land: string | null; region: string | null; argang: number | null; prisCa: number | null; bildUrl: string | null; kalla: string; betyg: { snitt: number; antal: number } | null }
 
 export function KatalogSok({ initial = "" }: { initial?: string }) {
   const [q, setQ] = useState(initial);
@@ -60,7 +60,10 @@ export function KatalogSok({ initial = "" }: { initial?: string }) {
                 <span className="block truncate font-semibold">{t.namn}{t.argang ? ` ${t.argang}` : ""}</span>
                 <span className="block truncate text-sm text-muted">{[kategori(t.kategori)?.namn, t.producent, t.region, t.land].filter(Boolean).join(" · ")}</span>
               </span>
-              {t.prisCa != null && <span className="num text-sm text-muted">{kr(t.prisCa)}</span>}
+              <span className="flex shrink-0 flex-col items-end">
+                {t.betyg && <span className="num text-sm font-semibold text-gold" aria-label={`Snittbetyg ${betygText(t.betyg.snitt)} av ${t.betyg.antal}`}>★ {betygText(t.betyg.snitt)} <span className="font-normal text-muted">({t.betyg.antal})</span></span>}
+                {t.prisCa != null && <span className="num text-sm text-muted">{kr(t.prisCa)}</span>}
+              </span>
               <Icon name="pil" className="shrink-0 text-muted" />
             </Link>
           </li>

@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { kravAnvandare } from "@/lib/auth";
 import { PageHeader } from "@/components/Page";
-import { BytLosenordForm, LoggaUtKnapp, RaderaKontoForm } from "@/components/KontoFormular";
+import { BytLosenordForm, DelaKommentarer, LoggaUtKnapp, RaderaKontoForm } from "@/components/KontoFormular";
+import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Mitt konto" };
 export const dynamic = "force-dynamic";
 
 export default async function Konto() {
   const anv = await kravAnvandare();
+  const { delaKommentarer } = await db.anvandare.findUniqueOrThrow({ where: { id: anv.id }, select: { delaKommentarer: true } });
   return (
     <>
       <PageHeader eyebrow="Mer" title="Mitt konto">Inloggad som {anv.namn} ({anv.epost}).</PageHeader>
@@ -20,6 +22,11 @@ export default async function Konto() {
         <section className="card flex flex-col gap-3 p-5" aria-labelledby="k-pw">
           <h2 id="k-pw" className="display text-2xl">Byt lösenord</h2>
           <BytLosenordForm />
+        </section>
+        <section className="card flex flex-col gap-3 p-5 lg:col-span-2" aria-labelledby="k-dela">
+          <h2 id="k-dela" className="display text-2xl">Betyg och kommentarer</h2>
+          <p className="text-sm text-muted">Dina betyg räknas alltid in anonymt i Vinkällarens snittbetyg. Kommentarer visas för andra bara om du vill.</p>
+          <DelaKommentarer start={delaKommentarer} />
         </section>
         <section className="card flex flex-col gap-3 p-5 lg:col-span-2" aria-labelledby="k-rad">
           <h2 id="k-rad" className="display text-2xl">Radera konto</h2>

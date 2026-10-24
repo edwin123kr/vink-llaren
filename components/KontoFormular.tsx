@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
-import { bytLosenord, loggaIn, loggaUt, raderaKonto, skapaKonto, type KontoState } from "@/app/actions/konto";
+import { bytLosenord, loggaIn, loggaUt, raderaKonto, sattDelaKommentarer, skapaKonto, type KontoState } from "@/app/actions/konto";
 
 function Falt({ id, label, typ = "text", fel, ...rest }: { id: string; label: string; typ?: string; fel?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
@@ -93,5 +93,26 @@ export function RaderaKontoForm() {
       <Falt id="radera-losenord" name="losenord" label="Ditt lösenord" typ="password" autoComplete="current-password" required fel={state?.fel?.losenord} />
       <button type="submit" className="btn !border-danger text-danger" disabled={pending}>{pending ? "Raderar …" : "Radera mitt konto"}</button>
     </form>
+  );
+}
+
+export function DelaKommentarer({ start: initial }: { start: boolean }) {
+  const [dela, setDela] = useState(initial);
+  const [pending, start] = useTransition();
+  return (
+    <label className="flex min-h-11 items-center gap-3">
+      <input
+        type="checkbox"
+        className="h-5 w-5 accent-[var(--color-gold)]"
+        checked={dela}
+        disabled={pending}
+        onChange={(e) => {
+          const v = e.target.checked;
+          setDela(v);
+          start(() => sattDelaKommentarer(v));
+        }}
+      />
+      <span>Visa mina kommentarer för andra (med mitt förnamn)</span>
+    </label>
   );
 }

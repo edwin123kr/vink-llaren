@@ -77,6 +77,12 @@ I mobilmenyn finns Samling, Smakprofil, "+", Sommelier och Mer (där provningen 
   som saknas där fylls i. Den som lade in en dryck kan rätta den så länge ingen annan använder den;
   annars blir rättelsen en egen kopia. Personliga uppgifter (pris, plats, anteckningar, betyg) delas
   aldrig. Drycker som AI:n fyllt i i provläget delas inte.
+- **Etikettbilder:** X-Wines saknar bilder. Har ett vin ingen bild visas knappen "Fota etiketten" på
+  flaskan, och fotot blir vinets bild för alla. Ett foto som togs när en flaska identifierades via
+  etikettfoto blir också katalogens bild om den saknar en.
+- **Gemensamma betyg:** alla betyg räknas anonymt in i ett snittbetyg som syns på flaskan, på vinets
+  sida och i katalogsökningen ("Vinkällarens betyg"). Kommentarer visas med förnamn, om användaren inte
+  har stängt av det under Mitt konto.
 - Det finns ingen återställning av lösenord via e-post. Den som driver appen kan sätta ett nytt med
   `npm run konto -- losenord`.
 

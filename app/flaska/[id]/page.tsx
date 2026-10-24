@@ -9,6 +9,9 @@ import { betygText, datum, decimal, drickfonster, kr, lista, procent } from "@/l
 import { DrackDenKnapp } from "@/components/DrackDenKnapp";
 import { FlaskAtgarder } from "@/components/FlaskAtgarder";
 import { FlaskBild } from "@/components/FlaskBild";
+import { LaggTillBild } from "@/components/LaggTillBild";
+import { GemenskapBetyg } from "@/components/GemenskapBetyg";
+import { gemensamtBetyg, recensioner } from "@/lib/gemenskap";
 import { Icon } from "@/components/Icon";
 import { SmakStaplar } from "@/components/SmakStaplar";
 
@@ -42,6 +45,7 @@ export default async function FlaskSida({ params }: PageProps<"/flaska/[id]">) {
   const druvor = lista(d.druvor);
   const aromer = lista(d.aromer);
   const mat = lista(d.mat);
+  const [gemensamt, andras] = await Promise.all([gemensamtBetyg([d.id]), recensioner(d.id, f.anvandareId)]);
   const snitt = d.betyg.length ? Math.round(d.betyg.reduce((a, b) => a + b.betyg, 0) / d.betyg.length) : null;
   const fonster = drickfonster(f.drickFran, f.drickTill);
   const sb = `https://www.systembolaget.se/sok/?textQuery=${encodeURIComponent(d.sbArtikelnr || [d.producent, d.namn].filter(Boolean).join(" "))}`;
@@ -66,8 +70,9 @@ export default async function FlaskSida({ params }: PageProps<"/flaska/[id]">) {
       </Link>
 
       <div className="mt-2 grid gap-6 md:grid-cols-[220px_1fr] md:gap-10">
-        <div className="flex h-56 items-center justify-center rounded-[var(--radius-card)] border border-line bg-surface-2/50 p-4 md:h-80">
-          <FlaskBild kategori={d.kategori} bildUrl={d.bildUrl} />
+        <div className="relative flex h-56 flex-col items-center justify-center gap-3 rounded-[var(--radius-card)] border border-line bg-surface-2/50 p-4 md:h-80">
+          <div className="flex min-h-0 flex-1 items-center justify-center"><FlaskBild kategori={d.kategori} bildUrl={d.bildUrl} /></div>
+          {!d.bildUrl && <LaggTillBild flaskaId={f.id} />}
         </div>
 
         <div>
@@ -160,6 +165,9 @@ export default async function FlaskSida({ params }: PageProps<"/flaska/[id]">) {
             </ol>
           )}
         </section>
+        <div className="lg:col-span-2">
+          <GemenskapBetyg snitt={gemensamt.get(d.id)} recensioner={andras} />
+        </div>
       </div>
     </article>
   );

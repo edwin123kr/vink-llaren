@@ -15,3 +15,17 @@ export async function lasBild(id: string): Promise<{ data: Uint8Array; typ: stri
   const b = await db.bild.findUnique({ where: { id } });
   return b ? { data: b.data, typ: b.typ } : null;
 }
+
+/**
+ * Ger en dryck en etikettbild om den saknar en (gemensam katalog) eller om drycken är användarens egen.
+ * Bilden måste vara uppladdad av samma användare. Så växer katalogens bilder fram av användarnas foton.
+ */
+export async function satBildOmSaknas(dryckId: string, bildUrl: string, anvandareId: string): Promise<boolean> {
+  const id = bildUrl.match(/^\/api\/bild\/([a-z0-9]{20,40})$/)?.[1];
+  if (!id || !(await db.bild.findFirst({ where: { id, agareId: anvandareId }, select: { id: true } }))) return false;
+  const r = await db.dryck.updateMany({
+    where: { id: dryckId, OR: [{ agareId: anvandareId }, { agareId: null, bildUrl: null }] },
+    data: { bildUrl },
+  });
+  return r.count > 0;
+}

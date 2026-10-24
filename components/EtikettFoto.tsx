@@ -19,7 +19,7 @@ interface Svar {
 
 const SAKERHET = { hog: "Hög säkerhet", medel: "Medelsäker", lag: "Osäker: kontrollera noga" };
 
-export function EtikettFoto() {
+export function EtikettFoto({ ean }: { ean?: string }) {
   const kamera = useRef<HTMLInputElement>(null);
   const galleri = useRef<HTMLInputElement>(null);
   const [forhand, setForhand] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export function EtikettFoto() {
       const j = await res.json();
       if (!res.ok) throw new Error(j.fel ?? "Identifieringen misslyckades.");
       setSvar(j);
-      setInit({ ...tillDryckState(j), bildUrl: j.bildUrl, prisUppskattat: j.prisCa != null });
+      setInit({ ...tillDryckState(j), bildUrl: j.bildUrl, prisUppskattat: j.prisCa != null, ...(ean ? { ean } : {}) });
       setStatus("klar");
     } catch (e) {
       setStatus("fel");
@@ -77,7 +77,7 @@ export function EtikettFoto() {
           {status === "fel" && (
             <div className="flex flex-wrap justify-center gap-2">
               <Link href="/lagg-till/katalog" className="btn !min-h-11">Sök i katalogen</Link>
-              <Link href="/lagg-till/ny" className="btn !min-h-11">Fyll i själv</Link>
+              <Link href={ean ? `/lagg-till/ny?ean=${ean}` : "/lagg-till/ny"} className="btn !min-h-11">Fyll i själv</Link>
             </div>
           )}
         </div>
@@ -93,11 +93,11 @@ export function EtikettFoto() {
             {svar.lastText && <p className="text-sm text-muted">Läst på etiketten: <q>{svar.lastText}</q></p>}
             {svar.traffar.length > 0 && (
               <div>
-                <p className="font-semibold">Finns redan i katalogen?</p>
+                <p className="font-semibold">Är det någon av de här? Tryck för att välja.</p>
                 <ul className="mt-2 grid gap-2">
                   {svar.traffar.map((t) => (
                     <li key={t.id}>
-                      <Link href={`/lagg-till/katalog/${t.id}?bild=${encodeURIComponent(svar.bildUrl)}`} className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-line px-3 hover:border-muted">
+                      <Link href={`/lagg-till/katalog/${t.id}?bild=${encodeURIComponent(svar.bildUrl)}${ean ? `&ean=${ean}` : ""}`} className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-line px-3 hover:border-muted">
                         <span className="truncate">{t.namn}{t.argang ? ` ${t.argang}` : ""} <span className="text-sm text-muted">· {[kategori(t.kategori)?.namn, t.producent].filter(Boolean).join(" · ")}</span></span>
                         <Icon name="pil" className="shrink-0 text-muted" />
                       </Link>

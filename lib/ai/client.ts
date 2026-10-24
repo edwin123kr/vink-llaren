@@ -13,6 +13,16 @@ export function aiMode(): AiMode {
   return process.env.AI_MODE === "live" ? "live" : "mock";
 }
 
+/**
+ * På den publicerade sajten (Vercel) ger provläget inga användbara svar, så där stoppas AI-anropen med
+ * ett tydligt besked tills AI_MODE=live och ANTHROPIC_API_KEY är satta.
+ */
+export function kravLiveIProduktion() {
+  if (aiMode() === "mock" && process.env.VERCEL) {
+    throw new AiError("AI-funktionerna är inte aktiverade ännu. Fyll i uppgifterna själv så länge.", "config");
+  }
+}
+
 export function aiModel(): string {
   return process.env.ANTHROPIC_MODEL || "claude-opus-5-5";
 }

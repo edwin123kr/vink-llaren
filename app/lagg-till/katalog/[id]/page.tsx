@@ -17,6 +17,8 @@ export const dynamic = "force-dynamic";
 export default async function KatalogFlaska({ params, searchParams }: PageProps<"/lagg-till/katalog/[id]">) {
   const anv = await kravAnvandare();
   const bild = (await searchParams).bild;
+  const e = (await searchParams).ean;
+  const ean = typeof e === "string" && /^\d{8,14}$/.test(e) ? e : null;
   const egetFoto = typeof bild === "string" && /^\/api\/bild\/[a-z0-9]{20,40}$/.test(bild) ? bild : null;
   const d = await db.dryck.findFirst({ where: { id: (await params).id, ...synligaDrycker(anv.id) } });
   if (!d) notFound();
@@ -37,7 +39,7 @@ export default async function KatalogFlaska({ params, searchParams }: PageProps<
   return (
     <>
       <PageHeader eyebrow="Lägg till" title="Din flaska">Ange pris, antal och var du förvarar den.</PageHeader>
-      <KatalogFlaskaForm dryckId={d.id} sammanfattning={sammanfattning} bildUrl={d.bildUrl ? null : egetFoto} />
+      <KatalogFlaskaForm dryckId={d.id} sammanfattning={sammanfattning} bildUrl={d.bildUrl ? null : egetFoto} ean={d.ean ? null : ean} />
       {(g || andras.length > 0) && <div className="mt-6"><GemenskapBetyg snitt={g} recensioner={andras} /></div>}
     </>
   );

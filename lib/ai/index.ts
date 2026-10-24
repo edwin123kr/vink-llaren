@@ -1,5 +1,5 @@
 import "server-only";
-import { aiMode, strukturerat } from "./client";
+import { aiMode, kravLiveIProduktion, strukturerat } from "./client";
 import { mockDryckForslag, mockEtikett, mockProvning, mockSmakanalys } from "./mock";
 import { DryckForslag, EtikettSvar, Provningsforslag, Smakanalys } from "./schemas";
 
@@ -15,6 +15,7 @@ Pris anges i svenska kronor och bara om du har en rimlig uppfattning om nivån.`
 
 /** Fyll i uppgifter om en dryck utifrån namn, producent med mera (fas 3 bygger UI:t). */
 export async function fyllDryck(beskrivning: string): Promise<DryckForslag & { lage: "mock" | "live" }> {
+  kravLiveIProduktion();
   if (aiMode() === "mock") return { ...mockDryckForslag(beskrivning), lage: "mock" };
   const svar = await strukturerat({
     schema: DryckForslag,
@@ -28,6 +29,7 @@ export type BildTyp = "image/jpeg" | "image/png" | "image/webp" | "image/gif";
 
 /** Läs en etikett från ett foto och fyll i uppgifterna. */
 export async function identifieraEtikett(base64: string, mediaType: BildTyp): Promise<EtikettSvar & { lage: "mock" | "live" }> {
+  kravLiveIProduktion();
   if (aiMode() === "mock") return { ...mockEtikett(), lage: "mock" };
   const svar = await strukturerat({
     schema: EtikettSvar,
@@ -54,6 +56,7 @@ Lista bara något under "undvik" om det finns minst två låga betyg som stöder
 /** Smakanalys. I provläget byggs texten av de lokala siffrorna. */
 export async function analyseraSmak(u: SmakUnderlag): Promise<Smakanalys & { lage: "mock" | "live" }> {
   const giltiga = new Set(u.kandidater.map((k) => k.id));
+  kravLiveIProduktion();
   if (aiMode() === "mock") return { ...mockSmakanalys(u), lage: "mock" };
   const svar = await strukturerat({
     schema: Smakanalys,
@@ -73,6 +76,7 @@ Håll dig inom budgeten: summan av pris × antal flaskor per vin ska helst inte 
 Om temat är blindprovning: välj viner med tydliga skillnader och skriv vad deltagarna kan gissa på.`;
 
 export async function planeraProvning(u: ProvningUnderlag): Promise<Provningsforslag & { lage: "mock" | "live" }> {
+  kravLiveIProduktion();
   if (aiMode() === "mock") return { ...mockProvning(u), lage: "mock" };
   const svar = await strukturerat({
     schema: Provningsforslag,

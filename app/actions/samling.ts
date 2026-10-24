@@ -30,7 +30,7 @@ function uppdatera(id?: string) {
 }
 
 /** Ny flaska av en dryck som redan finns i katalogen. */
-export async function laggTillFranKatalog(dryckId: string, flaska: unknown, bildUrl?: string | null): Promise<Resultat> {
+export async function laggTillFranKatalog(dryckId: string, flaska: unknown, bildUrl?: string | null, ean?: string | null): Promise<Resultat> {
   const anv = await kravAnvandare();
   const f = FlaskaIn.safeParse(flaska);
   if (!f.success) return { ok: false, fel: faltFel(f.error) };
@@ -39,6 +39,10 @@ export async function laggTillFranKatalog(dryckId: string, flaska: unknown, bild
   const ny = await db.flaska.create({ data: { ...flaskaData(f.data), dryckId, anvandareId: anv.id } });
   // ett etikettfoto som togs när flaskan identifierades blir katalogens bild om den saknar en
   if (bildUrl) await satBildOmSaknas(dryckId, bildUrl, anv.id);
+  // en skannad streckkod som saknades kopplas till vinet, så att nästa skanning hittar det direkt
+  if (ean && /^\d{8,14}$/.test(ean) && !(await db.dryck.findFirst({ where: { ean, agareId: null }, select: { id: true } }))) {
+    await db.dryck.updateMany({ where: { id: dryckId, ean: null, OR: [{ agareId: null }, { agareId: anv.id }] }, data: { ean } });
+  }
   uppdatera();
   return { ok: true, id: ny.id };
 }

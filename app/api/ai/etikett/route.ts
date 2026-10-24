@@ -4,6 +4,17 @@ import { sokKatalog } from "@/lib/katalog";
 import { EJ_INLOGGAD, hamtaAnvandare } from "@/lib/auth";
 import { kontrolleraAiKvot } from "@/lib/aikvot";
 
+/** Letar efter vinet i katalogen: först namn + producent, sedan bara namnet, sedan bara producenten. */
+async function matcha(anvId: string, namn: string, producent: string | null, argang: number | null) {
+  const sett = new Map<string, Awaited<ReturnType<typeof sokKatalog>>[number]>();
+  for (const q of [[producent, namn].filter(Boolean).join(" "), namn, producent ?? ""]) {
+    if (q.trim().length < 2 || sett.size >= 5) continue;
+    for (const t of await sokKatalog(anvId, q, { limit: 5 })) if (!sett.has(t.id)) sett.set(t.id, t);
+  }
+  // samma årgång först
+  return [...sett.values()].sort((a, b) => Number(b.argang === argang) - Number(a.argang === argang)).slice(0, 5);
+}
+
 const TILLATNA: BildTyp[] = ["image/jpeg", "image/png", "image/webp"];
 const MAX = 6 * 1024 * 1024;
 
@@ -23,7 +34,7 @@ export async function POST(req: Request) {
     await kontrolleraAiKvot(anv.id, "etikett");
     const svar = await identifieraEtikett(data.toString("base64"), fil.type as BildTyp);
     if (!svar.arDryck) return Response.json({ fel: "Det gick inte att hitta en vin- eller spritetikett på bilden. Prova att fota närmare och rakt framifrån.", bildUrl }, { status: 422 });
-    const traffar = svar.lage === "live" ? await sokKatalog(anv.id, [svar.producent, svar.namn].filter(Boolean).join(" "), { limit: 3 }) : [];
+    const traffar = svar.lage === "live" ? await matcha(anv.id, svar.namn, svar.producent, svar.argang) : [];
     return Response.json({ ...svar, bildUrl, traffar });
   } catch (e) {
     if (e instanceof AiError) return Response.json({ fel: e.message, typ: e.kind, bildUrl }, { status: e.kind === "rate_limit" ? 429 : 502 });

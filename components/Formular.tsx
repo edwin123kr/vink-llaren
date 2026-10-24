@@ -17,8 +17,8 @@ export function NyFlaskaForm({ init, ai = false }: { init?: DryckState; ai?: boo
   );
 }
 
-export function KatalogFlaskaForm({ dryckId, sammanfattning, bildUrl }: { dryckId: string; sammanfattning: React.ReactNode; bildUrl?: string | null }) {
-  return <DryckForm lage="katalog" sammanfattning={sammanfattning} spara={(_d, f) => laggTillFranKatalog(dryckId, f, bildUrl)} />;
+export function KatalogFlaskaForm({ dryckId, sammanfattning, bildUrl, ean }: { dryckId: string; sammanfattning: React.ReactNode; bildUrl?: string | null; ean?: string | null }) {
+  return <DryckForm lage="katalog" sammanfattning={sammanfattning} spara={(_d, f) => laggTillFranKatalog(dryckId, f, bildUrl, ean)} />;
 }
 
 export function RedigeraForm({ flaskaId, dryck, flaska }: { flaskaId: string; dryck: DryckState; flaska: FlaskaState }) {

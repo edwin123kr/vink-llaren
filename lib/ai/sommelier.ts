@@ -1,6 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { AiError, aiMode, aiModel, getClient } from "./client";
+import { AiError, aiMode, aiModel, getClient, kravLiveIProduktion } from "./client";
 
 /**
  * AI-sommeliern: ett strömmande samtal. Claude får veta vad som finns i användarens samling och hur
@@ -37,6 +37,7 @@ ${k.senaste || "Inga betyg än."}`;
 }
 
 export async function* fragaSommelier(kontext: Kontext, historik: Historik, fraga: string): AsyncGenerator<SommelierHandelse> {
+  kravLiveIProduktion();
   if (aiMode() === "mock") {
     yield* mockSvar(kontext, fraga);
     return;

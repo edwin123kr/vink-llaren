@@ -152,7 +152,7 @@ export function Skanner() {
             <>
               <p className="text-sm text-muted">Lägg till flaskan på ett annat sätt. Streckkoden sparas så att nästa skanning hittar den.</p>
               <div className="flex flex-wrap gap-2">
-                <Link href="/lagg-till/foto" className="btn btn-gold !min-h-11"><Icon name="kamera" size={18} /> Fota etiketten</Link>
+                <Link href={`/lagg-till/foto?ean=${encodeURIComponent(ean)}`} className="btn btn-gold !min-h-11"><Icon name="kamera" size={18} /> Fota etiketten</Link>
                 <Link href={`/lagg-till/ny?ean=${encodeURIComponent(ean)}`} className="btn !min-h-11">Fyll i själv</Link>
               </div>
             </>

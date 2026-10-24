@@ -24,8 +24,8 @@ e-post och lösenord; varje konto har sin egen samling, medan vinkatalogen delas
 Kräver Node 20+.
 
 ```bash
+cp .env.example .env   # inställningar (gör detta först)
 npm install            # installerar och genererar Prisma-klienten
-cp .env.example .env   # om .env saknas
 npm run db:migrate     # skapar SQLite-databasen (.data/dev.db)
 npm run import -- xwines data/fixtures/xwines-test-100.csv   # valfritt: 100 viner i katalogen
 npm run db:seed        # valfritt: demokonto demo@exempel.se / demo1234 med exempelflaskor

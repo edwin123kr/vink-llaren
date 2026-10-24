@@ -10,7 +10,7 @@
     "postinstall": "prisma generate",
     "test": "vitest run",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "prisma db seed",
+    "db:seed": "prisma migrate deploy && prisma db seed",
     "db:demo:rensa": "tsx scripts/rensa-demo.mts",
     "db:studio": "prisma studio",
     "import": "tsx scripts/import/index.mts",

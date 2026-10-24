@@ -31,7 +31,6 @@ export default async function ProvningSida({ params }: PageProps<"/provning/[id]
       <PageHeader eyebrow={`${p.deltagare} deltagare · ${p.antalViner} viner · ${kr(p.budgetPerPerson)} per person${p.datum ? ` · ${datum(p.datum)}` : ""}`} title={p.titel}>
         {f?.inledning}
       </PageHeader>
-      {f?.lage === "mock" && <p className="chip mb-4 !border-gold !text-gold">Låtsasläge: vinerna är exempel, inte riktiga förslag</p>}
 
       <section className="card mb-4 grid grid-cols-2 gap-3 p-5 sm:grid-cols-4" aria-label="Beräkning">
         {[
@@ -75,7 +74,7 @@ export default async function ProvningSida({ params }: PageProps<"/provning/[id]
             </li>
           ))}
         </ol>
-        <p className="mt-2 text-xs text-muted">Förslagen bygger på Claudes kunskap. Kontrollera att vinerna finns i lager och välj ett likvärdigt alternativ om inte.</p>
+        <p className="mt-2 text-xs text-muted">Förslagen bygger på vår sommeliers kunskap. Kontrollera att vinerna finns i lager och välj ett likvärdigt alternativ om inte.</p>
       </section>
 
       <section className="card mt-6 p-5" aria-labelledby="inkop">

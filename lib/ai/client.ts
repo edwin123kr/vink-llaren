@@ -5,7 +5,7 @@ import type { z } from "zod";
 
 /**
  * Den enda platsen där Claude anropas. Körs bara på servern; nyckeln når aldrig webbläsaren.
- * AI_MODE=mock (standard) ger låtsassvar, AI_MODE=live anropar API:et.
+ * AI_MODE=mock (standard) ger provlägessvar, AI_MODE=live anropar API:et.
  */
 export type AiMode = "mock" | "live";
 
@@ -60,10 +60,10 @@ export async function strukturerat<S extends z.ZodType>(opts: {
       fallbacks: "default",
     });
     if (res.stop_reason === "refusal") {
-      throw new AiError("Claude kunde inte svara på den här förfrågan.", "refusal");
+      throw new AiError("Vår sommelier kunde inte svara på den här frågan.", "refusal");
     }
     if (res.parsed_output == null) {
-      throw new AiError("Svaret från Claude gick inte att tolka.", "parse");
+      throw new AiError("Svaret gick inte att tolka. Försök igen.", "parse");
     }
     return res.parsed_output as z.infer<S>;
   } catch (e) {

@@ -16,7 +16,7 @@ export default async function Provning() {
   return (
     <>
       <PageHeader eyebrow="Planera" title="Vinprovning">
-        Ange deltagare, antal viner och budget. Appen räknar flaskor och Claude föreslår viner i rätt ordning.
+        Ange deltagare, antal viner och budget. Appen räknar flaskor och vår sommelier föreslår viner i rätt ordning.
       </PageHeader>
       <ProvningForm />
       {tidigare.length > 0 && (

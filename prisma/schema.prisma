@@ -45,6 +45,8 @@ model Dryck {
   /// null = delad katalog (importerad). Annars en dryck som en användare har lagt in själv.
   agareId        String?
   agare          Anvandare? @relation(fields: [agareId], references: [id], onDelete: Cascade)
+  /// Vem som lade in drycken i den gemensamma katalogen (för rättelser). null för importerad data.
+  skapadAvId     String?
   skapad         DateTime   @default(now())
   uppdaterad     DateTime   @updatedAt
 

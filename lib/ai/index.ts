@@ -51,7 +51,7 @@ Rekommendationer får ENDAST använda id:n ur kandidatlistan. Hittar du inget pa
 Under "utforska" får du föreslå en instegsflaska utifrån din kunskap, men skriv den som en stil eller en välkänd produkt och undvik påhittade namn.
 Lista bara något under "undvik" om det finns minst två låga betyg som stöder det.`;
 
-/** Smakanalys. I låtsasläge byggs texten av de lokala siffrorna. */
+/** Smakanalys. I provläget byggs texten av de lokala siffrorna. */
 export async function analyseraSmak(u: SmakUnderlag): Promise<Smakanalys & { lage: "mock" | "live" }> {
   const giltiga = new Set(u.kandidater.map((k) => k.id));
   if (aiMode() === "mock") return { ...mockSmakanalys(u), lage: "mock" };

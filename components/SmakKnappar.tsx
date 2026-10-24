@@ -24,7 +24,7 @@ export function AnalysKnapp({ typ, text }: { typ: "vin" | "sprit"; text: string 
           })
         }
       >
-        <Icon name="smak" size={18} /> {pending ? "Claude analyserar …" : text}
+        <Icon name="smak" size={18} /> {pending ? "Vår sommelier analyserar …" : text}
       </button>
       <p role="status" aria-live="polite" className="text-sm text-danger">{fel}</p>
     </div>

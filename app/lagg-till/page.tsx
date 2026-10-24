@@ -6,10 +6,10 @@ import { PageHeader } from "@/components/Page";
 export const metadata: Metadata = { title: "Lägg till flaska" };
 
 const VAGAR: { icon: IconName; title: string; text: string; href: string }[] = [
-  { icon: "kamera", title: "Fota etiketten", text: "Claude känner igen flaskan och fyller i fälten.", href: "/lagg-till/foto" },
+  { icon: "kamera", title: "Fota etiketten", text: "Vår sommelier känner igen flaskan och fyller i fälten.", href: "/lagg-till/foto" },
   { icon: "streckkod", title: "Skanna streckkod", text: "Använd mobilkameran.", href: "/lagg-till/skanna" },
   { icon: "sok", title: "Sök i katalogen", text: "Hitta drycken och välj den.", href: "/lagg-till/katalog" },
-  { icon: "penna", title: "Fyll i själv", text: "Claude kan föreslå druva, smakprofil och mat.", href: "/lagg-till/ny" },
+  { icon: "penna", title: "Fyll i själv", text: "Vår sommelier kan föreslå druva, smakprofil och mat.", href: "/lagg-till/ny" },
 ];
 
 export default function LaggTill() {

@@ -135,7 +135,7 @@ export default async function FlaskSida({ params }: PageProps<"/flaska/[id]">) {
           {d.beskrivning && <p className="mt-4 border-t border-line pt-4">{d.beskrivning}</p>}
           <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-4 text-sm">
             <a href={sb} target="_blank" rel="noopener noreferrer" className="btn !min-h-11">Sök på Systembolaget ↗</a>
-            <span className="text-muted">Källa: {KALLOR[d.kalla]?.namn ?? d.kalla}{d.licens ? ` (${d.licens})` : ""}</span>
+            <span className="text-muted">Källa: {KALLOR[d.kalla]?.namn ?? d.kalla}</span>
           </div>
         </section>
 

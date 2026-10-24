@@ -249,7 +249,7 @@ export function SamlingVy({ rader }: { rader: SamlingRad[] }) {
                       {r.snitt != null && <span className="num text-gold">★ {betygText(r.snitt)}</span>}
                       {f.status !== "okand" && <span className={FONSTER_STIL[f.status]}>{FONSTER.find((x) => x.id === f.status)?.namn} <span className="text-muted">{f.text}</span></span>}
                       {pris(r) != null && <span className="num text-muted">{kr(pris(r))}</span>}
-                      {r.dryck.kalla === "demo" && <span className="text-muted">· Exempeldata</span>}
+                      
                     </p>
                   </div>
                 </Link>

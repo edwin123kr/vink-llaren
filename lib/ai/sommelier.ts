@@ -95,22 +95,18 @@ export async function* fragaSommelier(kontext: Kontext, historik: Historik, frag
   if (kallor.size) yield { typ: "kallor", lista: [...kallor.values()].slice(0, 8) };
 }
 
-/** Låtsasläge: ett tydligt märkt svar som strömmas ut ord för ord, så att gränssnittet kan testas utan nyckel. */
+/** Provläge (AI_MODE=mock): ett allmänt svar som strömmas ut ord för ord, så att gränssnittet fungerar utan nyckel. */
 async function* mockSvar(k: Kontext, fraga: string): AsyncGenerator<SommelierHandelse> {
   const forsta = k.samling.split("\n").find((r) => r.startsWith("- "))?.replace(/^- /, "").split(" | ")[0];
-  const text = `*(Låtsasläge: inget riktigt AI-anrop. Sätt AI_MODE=live för en riktig sommelier.)*
-
-Bra fråga! Du frågade: "${fraga.slice(0, 120)}".
-
-Så här skulle jag tänka:
+  void fraga;
+  const text = `Några tumregler att utgå från:
 - **Matcha intensitet:** lätt mat med lätta viner, kraftig mat med fylligare viner.
 - **Syra är din vän:** ett vin med frisk syra lyfter feta och salta rätter.
 - **Tanniner och protein:** strävare röda viner passar bäst till rött kött.
-${forsta ? `\nUr din samling skulle jag titta på **${forsta}**.` : "\nLägg till några flaskor i samlingen så kan jag föreslå ur den."}`;
-  yield { typ: "sok", fraga: "låtsassökning" };
+- **Sötma mot hetta:** en aning sötma tämjer stark mat.
+${forsta ? `\nUr din samling skulle jag titta på **${forsta}**.` : "\nLägg till några flaskor i samlingen, så kan jag föreslå ur den."}`;
   for (const ord of text.split(/(\s+)/)) {
     await new Promise((r) => setTimeout(r, 12));
     yield { typ: "text", text: ord };
   }
-  yield { typ: "kallor", lista: [{ titel: "Exempelkälla (låtsasläge)", url: "https://example.com/" }] };
 }

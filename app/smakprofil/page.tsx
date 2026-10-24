@@ -55,7 +55,6 @@ export default async function Smakprofil({ searchParams }: PageProps<"/smakprofi
             </div>
             {analys ? (
               <>
-                {analys.lage === "mock" && <p className="chip self-start !border-gold !text-gold">Låtsasläge: texten är byggd av dina siffror</p>}
                 <p className="text-lg leading-relaxed">{analys.sammanfattning}</p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
@@ -76,7 +75,7 @@ export default async function Smakprofil({ searchParams }: PageProps<"/smakprofi
               </>
             ) : (
               <>
-                <p className="text-muted">Låt Claude läsa dina betyg och sammanfatta din smak, föreslå flaskor ur katalogen och tipsa om sådant du aldrig har testat.</p>
+                <p className="text-muted">Låt vår sommelier läsa dina betyg och sammanfatta din smak, föreslå flaskor ur katalogen och tipsa om sådant du aldrig har testat.</p>
                 <AnalysKnapp typ={typ} text="Analysera min smak" />
               </>
             )}

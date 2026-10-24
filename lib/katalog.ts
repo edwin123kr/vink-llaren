@@ -7,9 +7,9 @@ import type { Prisma } from "@/lib/generated/prisma/client";
 export const KALLOR: Record<string, { namn: string; licens: string; url?: string }> = {
   xwines: { namn: "X-Wines", licens: "CC0-1.0", url: "https://github.com/rogerioxavier/X-Wines" },
   openfoodfacts: { namn: "Open Food Facts", licens: "ODbL-1.0", url: "https://world.openfoodfacts.org" },
-  ai: { namn: "AI-ifylld (Claude), granskad av dig", licens: "Egen" },
-  manuell: { namn: "Manuellt inlagd", licens: "Egen" },
-  demo: { namn: "Exempeldata", licens: "Egen" },
+  ai: { namn: "Vinkällarens användare", licens: "Egen" },
+  manuell: { namn: "Vinkällarens användare", licens: "Egen" },
+  demo: { namn: "Vinkällaren", licens: "Egen" },
 };
 
 /** Sök i katalogen: varje ord måste finnas i söktexten (namn, producent, region, land, druvor). */

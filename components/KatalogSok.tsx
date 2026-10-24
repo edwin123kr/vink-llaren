@@ -69,7 +69,7 @@ export function KatalogSok({ initial = "" }: { initial?: string }) {
       {sokt && q.trim().length >= 2 && !laddar && (
         <div className="card mt-4 flex flex-col items-start gap-3 p-5">
           <p className="font-semibold">{visade.length ? "Hittar du inte rätt flaska?" : "Ingen träff i katalogen."}</p>
-          <p className="text-sm text-muted">Lägg till den själv, så kan Claude fylla i druva, smakprofil och mat.</p>
+          <p className="text-sm text-muted">Lägg till den själv, så fyller vår sommelier i druva, smakprofil och mat.</p>
           <Link href={`/lagg-till/ny?namn=${encodeURIComponent(q)}`} className="btn btn-gold"><Icon name="plus" size={18} /> Lägg till &quot;{q.trim()}&quot;</Link>
         </div>
       )}

@@ -11,7 +11,6 @@ import { Icon } from "./Icon";
 export function AiIfyllning({ d, satt }: { d: DryckState; satt: (p: Partial<DryckState>) => void }) {
   const [status, setStatus] = useState<"" | "laddar" | "klar" | "fel">("");
   const [meddelande, setMeddelande] = useState("");
-  const [lage, setLage] = useState<"mock" | "live" | null>(null);
 
   const kor = async () => {
     const beskrivning = [d.producent, d.namn, d.argang].filter(Boolean).join(" ").trim();
@@ -36,10 +35,9 @@ export function AiIfyllning({ d, satt }: { d: DryckState; satt: (p: Partial<Dryc
       });
       if (patch.prisCa) patch.prisUppskattat = true;
       satt(patch);
-      setLage(j.lage);
       setStatus("klar");
       const n = Object.keys(patch).filter((k) => k !== "prisUppskattat").length;
-      setMeddelande(n ? `Claude fyllde i ${n} fält. Granska och ändra innan du sparar.` : "Inga tomma fält att fylla i.");
+      setMeddelande(n ? `Vår sommelier fyllde i ${n} fält. Granska och ändra innan du sparar.` : "Inga tomma fält att fylla i.");
     } catch (e) {
       setStatus("fel");
       setMeddelande(e instanceof Error ? e.message : "Något gick fel.");
@@ -51,16 +49,15 @@ export function AiIfyllning({ d, satt }: { d: DryckState; satt: (p: Partial<Dryc
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-gold"><Icon name="smak" size={20} /></span>
         <div>
-          <h2 id="ai-titel" className="font-semibold">Låt Claude fylla i resten</h2>
-          <p className="text-sm text-muted">Skriv namn (och gärna producent och årgång), så föreslår Claude druva, smakprofil, dofter och mat. Fält du redan fyllt i ändras inte.</p>
+          <h2 id="ai-titel" className="font-semibold">Låt vår sommelier fylla i resten</h2>
+          <p className="text-sm text-muted">Skriv namn (och gärna producent och årgång), så föreslår vår sommelier druva, smakprofil, dofter och mat. Fält du redan fyllt i ändras inte.</p>
         </div>
       </div>
       <button type="button" className="btn self-start" onClick={kor} disabled={status === "laddar"}>
-        {status === "laddar" ? "Claude tänker …" : "Fyll i med AI"}
+        {status === "laddar" ? "Vår sommelier tänker …" : "Fyll i med AI"}
       </button>
       <p role="status" aria-live="polite" className={`text-sm ${status === "fel" ? "text-danger" : "text-muted"}`}>
         {meddelande}
-        {status === "klar" && lage === "mock" && <span className="ml-1 text-gold">Låtsasläge: svaret är ett exempel, inte riktiga uppgifter.</span>}
       </p>
     </section>
   );

@@ -144,7 +144,7 @@ export function Skanner() {
       {res && (
         <section className="card flex flex-col gap-3 p-5" role="alert">
           <p className="font-semibold">
-            {res.status === "saknas" && "Streckkoden finns inte i katalogen eller hos Open Food Facts."}
+            {res.status === "saknas" && "Vi hittade inte streckkoden. Lägg till flaskan själv, så finns den nästa gång."}
             {res.status === "inte-dryck" && `Hittade ${res.namn ? `"${res.namn}"` : "produkten"}, men det verkar inte vara vin eller sprit.`}
             {(res.status === "fel" || res.status === "ogiltig") && res.meddelande}
           </p>

@@ -1,17 +1,31 @@
 /**
- * Körs vid varje produktionsstart (efter migreringarna). Är katalogen tom läggs de 100 X-Wines-vinerna
- * som följer med repot in, så att en ny installation inte startar helt tom.
+ * Körs vid varje produktionsstart (efter migreringarna).
+ *  - Är katalogen tom läggs de 100 X-Wines-vinerna som följer med repot in.
+ *  - Ligger en större X-Wines-fil i data/katalog/ och katalogen bara har testurvalet läses den in.
+ * Importen hoppar över dubbletter, så inget dubbleras.
  */
 import "dotenv/config";
 import { spawnSync } from "node:child_process";
+import { readdirSync } from "node:fs";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../lib/generated/prisma/client";
 
 const db = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./.data/dev.db" }) });
-const antal = await db.dryck.count({ where: { agareId: null } });
+const xwines = await db.dryck.count({ where: { agareId: null, kalla: "xwines" } });
 await db.$disconnect();
-if (antal === 0) {
+
+const importera = (fil: string) => {
+  const r = spawnSync("npx", ["tsx", "scripts/import/index.mts", "xwines", fil], { stdio: "inherit" });
+  if (r.status !== 0) console.error(`Kunde inte läsa in ${fil}. Appen startar ändå.`);
+};
+
+const stora = readdirSync("data/katalog").filter((f) => /^xwines.*\.csv(\.gz)?$/i.test(f));
+if (xwines < 1000 && stora.length) {
+  for (const f of stora) {
+    console.log(`Läser in vinkatalogen från data/katalog/${f} …`);
+    importera(`data/katalog/${f}`);
+  }
+} else if (xwines === 0) {
   console.log("Katalogen är tom: lägger in X-Wines testurval (100 viner).");
-  const r = spawnSync("npx", ["tsx", "scripts/import/index.mts", "xwines", "data/fixtures/xwines-test-100.csv"], { stdio: "inherit" });
-  if (r.status !== 0) console.error("Kunde inte lägga in katalogen. Appen startar ändå.");
+  importera("data/fixtures/xwines-test-100.csv");
 }

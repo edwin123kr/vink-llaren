@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { aiMode, aiModel } from "@/lib/ai";
 import Link from "next/link";
-import { db } from "@/lib/db";
-import { kravAnvandare, synligaDrycker } from "@/lib/auth";
+import { kravAnvandare } from "@/lib/auth";
 import { Icon, type IconName } from "@/components/Icon";
 import { PageHeader } from "@/components/Page";
 
@@ -16,13 +14,10 @@ const RADER: { icon: IconName; title: string; text: string; fas: number; href?: 
   { icon: "bok", title: "Historik", text: "Alla betyg, senast först", fas: 2, href: "/historik" },
   { icon: "stapel", title: "Statistik", text: "Värde, snittbetyg och mest prisvärda", fas: 6, href: "/statistik" },
   { icon: "export", title: "Export och import", text: "Säkerhetskopia som JSON eller CSV", fas: 6, href: "/mer/backup" },
-  { icon: "bok", title: "Källor och licenser", text: "X-Wines (CC0) och Open Food Facts (ODbL)", fas: 1, href: "/mer/kallor" },
 ];
 
 export default async function Mer() {
-  const lage = aiMode();
   const anv = await kravAnvandare();
-  const katalog = await db.dryck.count({ where: synligaDrycker(anv.id) });
   return (
     <>
       <PageHeader eyebrow="Inställningar och verktyg" title="Mer">Inloggad som {anv.namn}.</PageHeader>
@@ -50,17 +45,13 @@ export default async function Mer() {
         })}
       </ul>
 
-      <section className="card mt-6 p-5" aria-labelledby="status-title">
-        <h2 id="status-title" className="display text-2xl">Status</h2>
-        <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-          <dt className="text-muted">AI-läge</dt>
-          <dd>{lage === "live" ? `Live (${aiModel()})` : "Låtsasläge: inga riktiga AI-anrop"}</dd>
-          <dt className="text-muted">Drycker i katalogen</dt>
-          <dd className="num">{katalog}</dd>
-          <dt className="text-muted">Databas</dt>
-          <dd>SQLite (lokal fil)</dd>
-        </dl>
-      </section>
+      <p className="mt-8 text-center text-xs leading-relaxed text-muted">
+        Vinkällaren · Vindata från{" "}
+        <a href="https://github.com/rogerioxavier/X-Wines" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">X-Wines</a>{" "}
+        och{" "}
+        <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">Open Food Facts</a>{" "}
+        (ODbL, © Open Food Facts-bidragsgivare) samt från appens användare.
+      </p>
     </>
   );
 }

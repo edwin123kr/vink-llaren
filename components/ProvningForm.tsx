@@ -98,7 +98,7 @@ export function ProvningForm() {
 
       {Object.keys(fel).length > 0 && <p role="alert" className="text-danger">{Object.values(fel)[0]}</p>}
       <button type="submit" className="btn btn-gold" disabled={pending}>
-        <Icon name="glas" size={20} /> {pending ? "Claude planerar provningen …" : "Föreslå viner"}
+        <Icon name="glas" size={20} /> {pending ? "Vår sommelier planerar provningen …" : "Föreslå viner"}
       </button>
     </form>
   );

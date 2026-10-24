@@ -74,7 +74,7 @@ export function EtikettFoto() {
           ) : (
             <span className="grid h-20 w-20 place-items-center rounded-full bg-surface-2 text-gold"><Icon name="kamera" size={36} /></span>
           )}
-          <p className="max-w-sm text-muted">Fota framsidan av etiketten rakt och nära, i bra ljus. Claude läser namn, producent och årgång och fyller i resten.</p>
+          <p className="max-w-sm text-muted">Fota framsidan av etiketten rakt och nära, i bra ljus. Vår sommelier läser namn, producent och årgång och fyller i resten.</p>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <button type="button" className="btn btn-gold" onClick={() => kamera.current?.click()} disabled={status === "laddar"}>
               <Icon name="kamera" size={20} /> {status === "laddar" ? "Läser etiketten …" : "Ta foto"}
@@ -82,7 +82,7 @@ export function EtikettFoto() {
             <button type="button" className="btn" onClick={() => galleri.current?.click()} disabled={status === "laddar"}>Välj bild</button>
           </div>
           <p role="status" aria-live="polite" className={status === "fel" ? "text-danger" : "text-sm text-muted"}>
-            {status === "laddar" ? "Claude tittar på bilden …" : fel}
+            {status === "laddar" ? "Vår sommelier tittar på bilden …" : fel}
           </p>
           {status === "fel" && (
             <div className="flex flex-wrap justify-center gap-2">
@@ -98,7 +98,6 @@ export function EtikettFoto() {
           <section className="card flex flex-col gap-3 p-5" aria-label="Resultat">
             <div className="flex flex-wrap items-center gap-2">
               <span className="chip">{SAKERHET[svar.sakerhet]}</span>
-              {svar.lage === "mock" && <span className="chip !border-gold !text-gold">Låtsasläge: exempelsvar</span>}
               <button type="button" className="ml-auto text-sm text-gold underline-offset-4 hover:underline" onClick={() => { setStatus(""); setForhand(null); }}>Ta nytt foto</button>
             </div>
             {svar.lastText && <p className="text-sm text-muted">Läst på etiketten: <q>{svar.lastText}</q></p>}
@@ -115,7 +114,7 @@ export function EtikettFoto() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-2 text-sm text-muted">Annars: granska Claudes förslag nedan och spara.</p>
+                <p className="mt-2 text-sm text-muted">Annars: granska förslaget nedan och spara.</p>
               </div>
             )}
           </section>

@@ -1,7 +1,7 @@
 /**
  * Katalogimport från öppna källor.
  *
- *   npm run import -- xwines <fil.csv>                 X-Wines (CC0). Test/Slim/Full-CSV från projektets GitHub/Google Drive.
+ *   npm run import -- xwines <fil.csv[.gz]>                 X-Wines (CC0). Test/Slim/Full-CSV från projektets GitHub/Google Drive.
  *   npm run import -- off <fil.jsonl[.gz]|fil.csv[.gz]>  Open Food Facts-dump (ODbL). JSONL eller den tabbseparerade CSV:n.
  *
  * Flaggor: --limit N   --dry-run
@@ -12,7 +12,7 @@
  */
 import "dotenv/config";
 import { createReadStream, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { createGunzip } from "node:zlib";
+import { createGunzip, gunzipSync } from "node:zlib";
 import { createInterface } from "node:readline";
 import path from "node:path";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
@@ -92,7 +92,8 @@ function lines(file: string) {
 const start = Date.now();
 if (kalla === "xwines") {
   let i = 0;
-  for (const r of csvObjects(readFileSync(fil, "utf8"))) {
+  const text = fil.endsWith(".gz") ? gunzipSync(readFileSync(fil)).toString("utf8") : readFileSync(fil, "utf8");
+  for (const r of csvObjects(text)) {
     if (++i > limit) break;
     await hantera(fromXWines(r), i);
   }

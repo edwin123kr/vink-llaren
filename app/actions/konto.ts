@@ -85,11 +85,12 @@ export async function raderaKonto(_prev: KontoState, form: FormData): Promise<Ko
   const anv = await kravAnvandare();
   const a = await db.anvandare.findUniqueOrThrow({ where: { id: anv.id } });
   if (!(await stammerLosenord(String(form.get("losenord") ?? ""), a.losenordHash))) return { fel: { losenord: "Fel lösenord." } };
-  // allt kopplat till kontot (flaskor, betyg, egna drycker, sessioner …) tas bort via cascade
-  const bilder = (await db.dryck.findMany({ where: { agareId: a.id }, select: { bildUrl: true } }))
-    .map((d) => d.bildUrl?.match(/^\/api\/bild\/([a-z0-9]+)$/)?.[1])
-    .filter(Boolean) as string[];
-  await db.$transaction([db.bild.deleteMany({ where: { OR: [{ id: { in: bilder } }, { agareId: a.id }] } }), db.anvandare.delete({ where: { id: a.id } })]);
+  // Allt kopplat till kontot (flaskor, betyg, egna drycker, sessioner …) tas bort via cascade.
+  // Drycker som lagts in i den gemensamma katalogen, och deras bilder, finns kvar för andra.
+  const idFran = (url: string | null) => url?.match(/^\/api\/bild\/([a-z0-9]+)$/)?.[1];
+  const delade = new Set((await db.dryck.findMany({ where: { agareId: null, bildUrl: { startsWith: "/api/bild/" } }, select: { bildUrl: true } })).map((d) => idFran(d.bildUrl)));
+  const mina = (await db.bild.findMany({ where: { agareId: a.id }, select: { id: true } })).map((b) => b.id).filter((id) => !delade.has(id));
+  await db.$transaction([db.bild.deleteMany({ where: { id: { in: mina } } }), db.anvandare.delete({ where: { id: a.id } })]);
   await avslutaSession();
   redirect("/logga-in?raderat=1");
 }

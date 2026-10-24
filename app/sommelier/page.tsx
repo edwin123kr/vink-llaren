@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { kravAnvandare } from "@/lib/auth";
-import { aiMode } from "@/lib/ai";
 import { datum } from "@/lib/format";
 import { PageHeader } from "@/components/Page";
 import { SommelierChatt, type ChattMeddelande } from "@/components/SommelierChatt";
@@ -24,7 +23,7 @@ export default async function Sommelier({ searchParams }: PageProps<"/sommelier"
   return (
     <>
       <PageHeader eyebrow="AI-sommelier" title="Fråga sommeliern">
-        Mat och vin, servering, drickfönster, regioner och druvor. {aiMode() === "mock" && <span className="chip ml-1 align-middle">Låtsasläge</span>}
+        Mat och vin, servering, drickfönster, regioner och druvor.
       </PageHeader>
       <div className="grid gap-6 lg:grid-cols-[1fr_18rem]">
         <div className="min-w-0">

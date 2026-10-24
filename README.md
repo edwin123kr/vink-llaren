@@ -71,8 +71,12 @@ I mobilmenyn finns Samling, Smakprofil, "+", Sommelier och Mer (där provningen 
 - **AI-gräns:** i live-läge får varje konto högst `AI_GRANS_PER_DAG` AI-anrop per dygn (standard 40),
   eftersom alla använder din API-nyckel.
 - Under Mer → Mitt konto kan man logga ut (offlinecachen på enheten töms), byta lösenord och radera kontot.
-- Katalogen (X-Wines, Open Food Facts) delas av alla. Lägger man in en egen dryck, eller redigerar en
-  katalogdryck, blir den ens egen och syns inte för andra.
+- **Självlärande katalog:** katalogen delas av alla. När någon lägger till en flaska som inte finns
+  hamnar drycken i katalogen, så att nästa person hittar den. Finns den redan (samma streckkod, eller
+  samma namn, producent och årgång oavsett stavning med versaler) används den befintliga, och uppgifter
+  som saknas där fylls i. Den som lade in en dryck kan rätta den så länge ingen annan använder den;
+  annars blir rättelsen en egen kopia. Personliga uppgifter (pris, plats, anteckningar, betyg) delas
+  aldrig. Drycker som AI:n fyllt i i provläget delas inte.
 - Det finns ingen återställning av lösenord via e-post. Den som driver appen kan sätta ett nytt med
   `npm run konto -- losenord`.
 
@@ -93,7 +97,9 @@ försöker spara.
 
 All AI går via `lib/ai/`, och anropen sker bara på servern. Nyckeln når aldrig webbläsaren.
 
-- `AI_MODE="mock"` (standard): låtsasläge utan nyckel. Svaren är deterministiska och tydligt märkta.
+- `AI_MODE="mock"` (standard): provläge utan nyckel, för utveckling. Svaren är allmänna mallar och hittar
+  inte på fakta om specifika produkter, men de är inte märkta i gränssnittet. **Använd live-läge när
+  appen används på riktigt.**
 - `AI_MODE="live"`: riktiga anrop. Kräver `ANTHROPIC_API_KEY` i `.env`.
 - `ANTHROPIC_MODEL` styr modellen (standard `claude-opus-5-5`).
 
@@ -159,11 +165,18 @@ Nya versioner driftsätts automatiskt när du pushar till GitHub.
   dina egna data först; katalogen behålls). En CSV med samma kolumner som exporten läses in rad för rad,
   och rader som inte går igenom valideringen rapporteras.
 
+## Större katalog
+
+Repot innehåller 100 viner från X-Wines. Ladda ner hela X-Wines (100 000 viner, CC0) via länkarna på
+https://github.com/rogerioxavier/X-Wines och lägg filen i `data/katalog/` (gärna komprimerad som
+`.csv.gz`). Vid nästa start läses den in automatiskt. Lokalt kan du också köra
+`npm run import -- xwines data/katalog/XWines_Full_100K_wines.csv`.
+
 ## Katalogimport
 
 ```bash
 npm run import -- xwines data/fixtures/xwines-test-100.csv     # 100 viner som följer med repot
-npm run import -- xwines ~/Downloads/XWines_Full_100K_wines.csv # hela X-Wines (ladda ner från deras Google Drive)
+npm run import -- xwines ~/Downloads/XWines_Full_100K_wines.csv # hela X-Wines (även .csv.gz)
 npm run import -- off ~/Downloads/openfoodfacts-products.jsonl.gz
 npm run import -- off ~/Downloads/en.openfoodfacts.org.products.csv.gz
 ```

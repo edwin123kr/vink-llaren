@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { kravAnvandare, synligaDrycker } from "@/lib/auth";
 import { typFor } from "@/lib/kategorier";
-import { sokText } from "@/lib/sok";
+import { dubblettNyckel, normalisera, sokText } from "@/lib/sok";
+import { aiMode } from "@/lib/ai";
 import { BetygIn, DryckIn, FlaskaIn, faltFel, type FaltFel } from "@/lib/validering";
 
 export type Resultat = { ok: true; id: string } | { ok: false; fel: FaltFel };
@@ -36,7 +37,14 @@ export async function laggTillFranKatalog(dryckId: string, flaska: unknown): Pro
   return { ok: true, id: ny.id };
 }
 
-/** Ny dryck (manuellt eller AI-ifylld och granskad) plus flaska i ett steg. */
+/** Fält som en ny tillagd dryck får fylla i hos en befintlig katalogdryck om de saknas där ("lär sig"). */
+const FYLLBARA = ["producent", "land", "region", "argang", "alkoholhalt", "volymMl", "fyllighet", "sotma", "syra", "stravhet", "rokighet", "beskrivning", "bildUrl", "ean", "sbArtikelnr", "prisCa"] as const;
+
+/**
+ * Ny dryck plus flaska i ett steg. Drycken hamnar i den gemensamma katalogen, så att nästa person som
+ * söker hittar den. Finns den redan där (samma streckkod, eller samma namn, producent och årgång)
+ * används den befintliga, och tomma uppgifter fylls i med det du har angett.
+ */
 export async function laggTillNy(dryck: unknown, flaska: unknown, kalla: "manuell" | "ai" = "manuell"): Promise<Resultat> {
   const anv = await kravAnvandare();
   const d = DryckIn.safeParse(dryck);
@@ -44,17 +52,28 @@ export async function laggTillNy(dryck: unknown, flaska: unknown, kalla: "manuel
   if (!d.success || !f.success) {
     return { ok: false, fel: { ...(d.success ? {} : faltFel(d.error)), ...(f.success ? {} : prefix(faltFel(f.error), "flaska.")) } };
   }
-  if (d.data.ean) {
-    const finns = await db.dryck.findFirst({ where: { ean: d.data.ean, ...synligaDrycker(anv.id) }, orderBy: { agareId: "desc" }, select: { id: true } });
-    if (finns) {
-      const ny = await db.flaska.create({ data: { ...flaskaData(f.data), dryckId: finns.id, anvandareId: anv.id } });
-      uppdatera();
-      return { ok: true, id: ny.id };
-    }
-  }
+  const data = dryckData(d.data);
+  // exempeldata från AI:ns provläge ska inte hamna i den gemensamma katalogen
+  const dela = !(kalla === "ai" && aiMode() === "mock");
+
   const ny = await db.$transaction(async (tx) => {
-    const dr = await tx.dryck.create({ data: { ...dryckData(d.data), kalla, agareId: anv.id } });
-    return tx.flaska.create({ data: { ...flaskaData(f.data), dryckId: dr.id, anvandareId: anv.id } });
+    const finns =
+      (data.ean && (await tx.dryck.findFirst({ where: { ean: data.ean, ...synligaDrycker(anv.id) }, orderBy: { agareId: "desc" } }))) ||
+      (await tx.dryck.findMany({ where: { sok: { contains: normalisera(data.namn) }, ...synligaDrycker(anv.id) }, take: 200 })).find((x) => dubblettNyckel(x) === dubblettNyckel(data)) ||
+      null;
+    let dryckId: string;
+    if (finns) {
+      dryckId = finns.id;
+      const fyll: Record<string, unknown> = {};
+      for (const k of FYLLBARA) if (finns[k] == null && data[k] != null) fyll[k] = data[k];
+      if ((finns.druvor == null || (Array.isArray(finns.druvor) && !finns.druvor.length)) && data.druvor.length) fyll.druvor = data.druvor;
+      if (fyll.ean && (await tx.dryck.findFirst({ where: { ean: fyll.ean as string, agareId: finns.agareId }, select: { id: true } }))) delete fyll.ean;
+      if (Object.keys(fyll).length) await tx.dryck.update({ where: { id: finns.id }, data: { ...fyll, sok: sokText({ ...finns, ...fyll } as never) } });
+    } else {
+      const dr = await tx.dryck.create({ data: { ...data, kalla, agareId: dela ? null : anv.id, skapadAvId: anv.id } });
+      dryckId = dr.id;
+    }
+    return tx.flaska.create({ data: { ...flaskaData(f.data), dryckId, anvandareId: anv.id } });
   });
   uppdatera();
   return { ok: true, id: ny.id };
@@ -71,13 +90,18 @@ export async function redigeraFlaska(flaskaId: string, dryck: unknown, flaska: u
   if (!d.success || !f.success) {
     return { ok: false, fel: { ...(d.success ? {} : faltFel(d.error)), ...(f.success ? {} : prefix(faltFel(f.error), "flaska.")) } };
   }
-  const cur = await db.flaska.findFirst({ where: { id: flaskaId, anvandareId: anv.id }, select: { dryckId: true, dryck: { select: { agareId: true, kalla: true, kallaId: true, licens: true, bildUrl: true } } } });
+  const cur = await db.flaska.findFirst({ where: { id: flaskaId, anvandareId: anv.id }, select: { dryckId: true, dryck: { select: { agareId: true, skapadAvId: true, kalla: true, kallaId: true, licens: true, bildUrl: true } } } });
   if (!cur) return { ok: false, fel: { _: "Flaskan finns inte längre." } };
   if (d.data.ean) {
     const krock = await db.dryck.findFirst({ where: { ean: d.data.ean, agareId: anv.id, NOT: { id: cur.dryckId } }, select: { id: true } });
     if (krock) return { ok: false, fel: { ean: "En annan av dina drycker har redan den här streckkoden." } };
   }
-  const egen = cur.dryck.agareId === anv.id;
+  // Den som lade in en dryck i katalogen får rätta den så länge ingen annan har den i sin samling eller historik.
+  const andraAnvander =
+    cur.dryck.agareId === null &&
+    ((await db.flaska.count({ where: { dryckId: cur.dryckId, NOT: { anvandareId: anv.id } } })) > 0 ||
+      (await db.betyg.count({ where: { dryckId: cur.dryckId, NOT: { anvandareId: anv.id } } })) > 0);
+  const egen = cur.dryck.agareId === anv.id || (cur.dryck.agareId === null && cur.dryck.skapadAvId === anv.id && !andraAnvander);
   await db.$transaction(async (tx) => {
     let dryckId = cur.dryckId;
     if (egen) {

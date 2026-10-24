@@ -3,7 +3,7 @@ import { lasInBackup } from "@/lib/backup";
 import { csvRader } from "@/lib/csvimport";
 import { parseCsv } from "@/scripts/import/csv";
 import { db } from "@/lib/db";
-import { EJ_INLOGGAD, hamtaAnvandare } from "@/lib/auth";
+import { EJ_INLOGGAD, hamtaAnvandare, EGNA_FORST } from "@/lib/auth";
 import { typFor } from "@/lib/kategorier";
 import { sokText } from "@/lib/sok";
 import { DryckIn, FlaskaIn } from "@/lib/validering";
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       fel.push(`Rad ${r.rad}: ${(d.success ? f.error?.issues[0]?.message : d.error.issues[0]?.message) ?? "ogiltig"}`);
       continue;
     }
-    const finns = d.data.ean ? await db.dryck.findFirst({ where: { ean: d.data.ean, OR: [{ agareId: null }, { agareId: anv.id }] }, orderBy: { agareId: "desc" }, select: { id: true } }) : null;
+    const finns = d.data.ean ? await db.dryck.findFirst({ where: { ean: d.data.ean, OR: [{ agareId: null }, { agareId: anv.id }] }, orderBy: EGNA_FORST, select: { id: true } }) : null;
     const dryckId = finns?.id ?? (await db.dryck.create({ data: { ...d.data, typ: typFor(d.data.kategori), sok: sokText(d.data), kalla: "manuell", agareId: anv.id } })).id;
     await db.flaska.create({ data: { ...f.data, inkopsdatum: f.data.inkopsdatum ? new Date(f.data.inkopsdatum) : null, dryckId, anvandareId: anv.id } });
     skapade++;

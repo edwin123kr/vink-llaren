@@ -15,8 +15,7 @@ import { createReadStream, mkdirSync, readFileSync, writeFileSync } from "node:f
 import { createGunzip, gunzipSync } from "node:zlib";
 import { createInterface } from "node:readline";
 import path from "node:path";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient } from "../../lib/generated/prisma/client";
+import { skapaKlient } from "../../lib/prisma-klient";
 import { dubblettNyckel } from "../../lib/sok";
 import { csvObjects, parseCsv } from "./csv";
 import { fromOff, fromXWines, type DryckInput, type OffProduct } from "./normalize";
@@ -30,7 +29,7 @@ if (!["xwines", "off"].includes(kalla ?? "") || !fil) {
   process.exit(1);
 }
 
-const db = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./.data/dev.db" }) });
+const db = skapaKlient();
 
 /* --- befintliga nycklar för dubblettkontroll --- */
 // bara den delade katalogen; användarnas egna drycker rörs inte

@@ -5,11 +5,10 @@
  *   npm run konto -- overta <epost>                     (flyttar data från före konton till ett konto)
  */
 import "dotenv/config";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient } from "../lib/generated/prisma/client";
+import { skapaKlient } from "../lib/prisma-klient";
 import { hashaLosenord } from "../lib/losenord";
 
-const db = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./.data/dev.db" }) });
+const db = skapaKlient();
 const [kommando, epostIn, extra] = process.argv.slice(2);
 const epost = epostIn?.trim().toLowerCase();
 

@@ -4,14 +4,14 @@
  * Namnen är medvetet generiska (inga riktiga produkter, priser eller betyg hittas på).
  */
 import "dotenv/config";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient, type Prisma } from "../lib/generated/prisma/client";
+import type { Prisma } from "../lib/generated/prisma/client";
+import { skapaKlient } from "../lib/prisma-klient";
 import { sokText } from "../lib/sok";
 import { hashaLosenord } from "../lib/losenord";
 
 export const DEMO = { epost: "demo@exempel.se", losenord: "demo1234" };
 
-const db = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./.data/dev.db" }) });
+const db = skapaKlient();
 
 type D = Prisma.DryckUncheckedCreateInput;
 const drycker: (D & { flaska?: { antal: number; inkopspris: number; plats: string; drickFran?: number; drickTill?: number }; betyg?: number[] })[] = [

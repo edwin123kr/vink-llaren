@@ -2,12 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { kravAnvandare, synligaDrycker } from "@/lib/auth";
+import { EGNA_FORST, kravAnvandare, synligaDrycker } from "@/lib/auth";
 import { typFor } from "@/lib/kategorier";
 import { dubblettNyckel, normalisera, sokText } from "@/lib/sok";
 import { aiMode } from "@/lib/ai";
 import { satBildOmSaknas } from "@/lib/bilder";
 import { BetygIn, DryckIn, FlaskaIn, faltFel, type FaltFel } from "@/lib/validering";
+
+/** Längre tidsgräns för transaktioner, eftersom databasen kan ligga långt bort (t.ex. Neon). */
+const TX = { maxWait: 10_000, timeout: 20_000 };
 
 export type Resultat = { ok: true; id: string } | { ok: false; fel: FaltFel };
 
@@ -61,7 +64,7 @@ export async function laggTillNy(dryck: unknown, flaska: unknown, kalla: "manuel
 
   const ny = await db.$transaction(async (tx) => {
     const finns =
-      (data.ean && (await tx.dryck.findFirst({ where: { ean: data.ean, ...synligaDrycker(anv.id) }, orderBy: { agareId: "desc" } }))) ||
+      (data.ean && (await tx.dryck.findFirst({ where: { ean: data.ean, ...synligaDrycker(anv.id) }, orderBy: EGNA_FORST }))) ||
       (await tx.dryck.findMany({ where: { sok: { contains: normalisera(data.namn) }, ...synligaDrycker(anv.id) }, take: 200 })).find((x) => dubblettNyckel(x) === dubblettNyckel(data)) ||
       null;
     let dryckId: string;
@@ -77,7 +80,7 @@ export async function laggTillNy(dryck: unknown, flaska: unknown, kalla: "manuel
       dryckId = dr.id;
     }
     return tx.flaska.create({ data: { ...flaskaData(f.data), dryckId, anvandareId: anv.id } });
-  });
+  }, TX);
   uppdatera();
   return { ok: true, id: ny.id };
 }
@@ -118,7 +121,7 @@ export async function redigeraFlaska(flaskaId: string, dryck: unknown, flaska: u
       await tx.betyg.updateMany({ where: { anvandareId: anv.id, flaskaId }, data: { dryckId } });
     }
     await tx.flaska.update({ where: { id: flaskaId }, data: { ...flaskaData(f.data), dryckId } });
-  });
+  }, TX);
   uppdatera(flaskaId);
   return { ok: true, id: flaskaId };
 }

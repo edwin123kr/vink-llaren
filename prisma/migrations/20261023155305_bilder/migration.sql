@@ -1,7 +1,0 @@
--- CreateTable
-CREATE TABLE "Bild" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "typ" TEXT NOT NULL,
-    "data" BLOB NOT NULL,
-    "skapad" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);

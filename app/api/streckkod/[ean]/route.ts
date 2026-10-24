@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { slaUppOff } from "@/lib/openfoodfacts";
-import { EJ_INLOGGAD, hamtaAnvandare, synligaDrycker } from "@/lib/auth";
+import { EJ_INLOGGAD, hamtaAnvandare, synligaDrycker, EGNA_FORST } from "@/lib/auth";
 
 /**
  * 1) Finns streckkoden i katalogen? → dryckId
@@ -13,7 +13,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/streckkod/[ean]
   if (!/^\d{8,14}$/.test(ean)) return Response.json({ status: "ogiltig", meddelande: "En streckkod har 8–14 siffror." }, { status: 400 });
 
   // egna drycker först, sedan den delade katalogen
-  const finns = await db.dryck.findFirst({ where: { ean, ...synligaDrycker(anv.id) }, orderBy: { agareId: "desc" }, select: { id: true, namn: true } });
+  const finns = await db.dryck.findFirst({ where: { ean, ...synligaDrycker(anv.id) }, orderBy: EGNA_FORST, select: { id: true, namn: true } });
   if (finns) return Response.json({ status: "katalog", dryckId: finns.id, namn: finns.namn });
 
   const off = await slaUppOff(ean);

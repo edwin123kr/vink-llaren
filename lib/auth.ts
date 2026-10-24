@@ -55,6 +55,9 @@ export const kravAnvandare = cache(async (): Promise<Anvandare> => {
 
 export const EJ_INLOGGAD = () => Response.json({ ok: false, fel: "Du är inte inloggad." }, { status: 401 });
 
+/** Sortering som lägger användarens egna drycker före katalogens (NULL sist i Postgres). */
+export const EGNA_FORST = { agareId: { sort: "desc", nulls: "last" } } as const;
+
 /** Drycker som en användare får se: den delade katalogen plus sina egna. */
 export const synligaDrycker = (anvandareId: string) => ({ OR: [{ agareId: null }, { agareId: anvandareId }] });
 

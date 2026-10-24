@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { EGNA_FORST } from "@/lib/auth";
 
 /**
  * Säkerhetskopia (JSON): allt som är ditt, plus de katalogdrycker som det refererar till.
@@ -115,7 +116,7 @@ export async function lasInBackup(anvandareId: string, input: unknown, lage: "sl
       }
       const ean = (data.ean as string | null | undefined) || null;
       const kandidat =
-        (ean && (await tx.dryck.findFirst({ where: { ean, OR: [{ agareId: null }, { agareId: anvandareId }] }, orderBy: { agareId: "desc" }, select: { id: true } }))) ||
+        (ean && (await tx.dryck.findFirst({ where: { ean, OR: [{ agareId: null }, { agareId: anvandareId }] }, orderBy: EGNA_FORST, select: { id: true } }))) ||
         (d.egen === false && KATALOGKALLOR.includes(String(data.kalla)) && data.kallaId
           ? await tx.dryck.findFirst({ where: { agareId: null, kalla: String(data.kalla), kallaId: String(data.kallaId) }, select: { id: true } })
           : null);
@@ -173,6 +174,6 @@ export async function lasInBackup(anvandareId: string, input: unknown, lage: "sl
       antal.onskningar++;
     }
     for (const sa of b.smakanalyser as Rad[]) await spara("smakanalys", sa, rensa(sa, F.smakanalys));
-  });
+  }, { maxWait: 10_000, timeout: 120_000 });
   return { ok: true, antal };
 }

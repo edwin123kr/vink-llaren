@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // native SQLite-drivrutin ska inte bundlas
-  serverExternalPackages: ["better-sqlite3", "@prisma/adapter-better-sqlite3"],
+  // databasdrivrutinen ska inte bundlas
+  serverExternalPackages: ["pg", "@prisma/adapter-pg"],
   async headers() {
     return [
       {

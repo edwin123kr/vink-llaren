@@ -14,17 +14,18 @@
     "db:demo:rensa": "tsx scripts/rensa-demo.mts",
     "db:studio": "prisma studio",
     "import": "tsx scripts/import/index.mts",
-    "konto": "tsx scripts/konto.mts"
+    "konto": "tsx scripts/konto.mts",
+    "vercel-build": "prisma generate && prisma migrate deploy && tsx scripts/forsta-start.mts && next build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.2.0",
-    "@prisma/adapter-better-sqlite3": "^7.10.1",
+    "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "@zxing/browser": "^0.2.1",
     "@zxing/library": "^0.23.0",
-    "better-sqlite3": "^13.0.3",
     "dotenv": "^18.0.9",
     "next": "16.4.3",
+    "pg": "^8.23.1",
     "prisma": "^7.10.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -33,8 +34,8 @@
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^22.20.5",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

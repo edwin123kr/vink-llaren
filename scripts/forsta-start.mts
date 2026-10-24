@@ -7,10 +7,9 @@
 import "dotenv/config";
 import { spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient } from "../lib/generated/prisma/client";
+import { skapaKlient } from "../lib/prisma-klient";
 
-const db = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./.data/dev.db" }) });
+const db = skapaKlient();
 const xwines = await db.dryck.count({ where: { agareId: null, kalla: "xwines" } });
 await db.$disconnect();
 

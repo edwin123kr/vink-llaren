@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 /// Katalogen: en dryck oavsett om du äger den eller inte.
@@ -58,7 +58,7 @@ model Dryck {
   @@index([kategori])
   @@index([producent, namn, argang])
   @@index([kalla, kallaId])
-  @@index([sok])
+  @@index([sok(ops: raw("gin_trgm_ops"))], type: Gin) // snabb "innehåller"-sökning (pg_trgm)
   @@index([ean])
   @@index([agareId])
 }

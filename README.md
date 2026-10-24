@@ -21,12 +21,13 @@ e-post och lösenord; varje konto har sin egen samling, medan vinkatalogen delas
 
 ## Kom igång
 
-Kräver Node 20+.
+Kräver Node 20+ och en Postgres-databas: antingen samma Neon-databas som appen på nätet använder
+(kopiera `DATABASE_URL` och `DATABASE_URL_UNPOOLED` från Vercel), eller en lokal, t.ex. Postgres.app.
 
 ```bash
-cp .env.example .env   # inställningar (gör detta först)
+cp .env.example .env   # inställningar (gör detta först), fyll i DATABASE_URL
 npm install            # installerar och genererar Prisma-klienten
-npm run db:migrate     # skapar SQLite-databasen (.data/dev.db)
+npx prisma migrate deploy  # skapar tabellerna
 npm run import -- xwines data/fixtures/xwines-test-100.csv   # valfritt: 100 viner i katalogen
 npm run db:seed        # valfritt: demokonto demo@exempel.se / demo1234 med exempelflaskor
 npm run dev            # http://localhost:3000, skapa ett konto eller logga in med demokontot
@@ -137,28 +138,36 @@ Konventioner:
 - Betyg lagras i tiondelar (78 = 7,8) och visas med decimalkomma.
 - Listor (druvor, aromer, mat) lagras som JSON.
 
-## Lägga appen på nätet (så att vänner kan använda den)
+## Lägga appen på nätet (Vercel + Neon, gratis att börja med)
 
-Repot har en `Dockerfile`. Containern kör migreringarna vid start, lägger in de 100 X-Wines-vinerna om
-katalogen är tom och sparar databasen på en volym i `/data`. Så här gör du på
-[Railway](https://railway.com) (Fly.io och Render fungerar på samma sätt):
+Appen körs på [Vercel](https://vercel.com) och databasen på [Neon](https://neon.tech) (Postgres).
+Båda har gratisnivåer; Vercels gratisplan är för icke-kommersiellt bruk.
 
-1. Logga in på Railway med ditt GitHub-konto.
-2. **New Project → Deploy from GitHub repo** och välj repot. Railway hittar `Dockerfile` själv.
-3. Lägg till en **volym** på tjänsten med monteringssökvägen `/data` (annars försvinner databasen vid
-   varje ny version).
-4. Under **Variables**: `REGISTRERINGSKOD` (valfri kod till dina vänner), `AI_MODE` (`mock` eller
-   `live`), och för live även `ANTHROPIC_API_KEY`. Valfritt: `AI_GRANS_PER_DAG`.
-5. Under **Settings → Networking**: **Generate Domain** (port 3000). Du får en https-adress.
-6. Öppna adressen i mobilen, skapa konto och lägg appen på hemskärmen.
+1. Logga in på Vercel med ditt GitHub-konto.
+2. **Add New → Project**, välj repot och klicka **Deploy**. Det första bygget misslyckas eftersom
+   databasen saknas; det är väntat.
+3. I projektet: **Storage → Create Database → Neon** (gratisnivån) och koppla den till projektet.
+   Då sätts `DATABASE_URL` och `DATABASE_URL_UNPOOLED` automatiskt.
+4. **Settings → Environment Variables**: lägg till `REGISTRERINGSKOD` (valfri kod till dina vänner),
+   `AI_MODE` = `live` och `ANTHROPIC_API_KEY`. Valfritt: `AI_GRANS_PER_DAG`.
+5. **Deployments → … → Redeploy**. Bygget (`npm run vercel-build`) skapar tabellerna och lägger in
+   100 viner i katalogen.
+6. Öppna adressen (t.ex. `https://vink-llaren.vercel.app`) i mobilen, skapa konto och lägg appen på
+   hemskärmen.
+
+**Hela katalogen (100 000 viner):** lägg in samma `DATABASE_URL` i `.env` på din dator och kör
+`npm run import -- xwines <sökväg till XWines_Full_100K_wines.csv>`. Det tar några minuter.
 
 Nya versioner driftsätts automatiskt när du pushar till GitHub.
 
-**Byta till Postgres** (t.ex. Supabase eller Neon):
-1. Sätt `provider = "postgresql"` i `schema.prisma`.
-2. Byt adaptern i `lib/db.ts` mot `@prisma/adapter-pg`.
-3. Peka `DATABASE_URL` mot den nya databasen.
-4. Kör `npm run db:migrate`.
+Begränsningar på Vercel: en uppladdning får vara högst 4,5 MB (etikettfoton förminskas i webbläsaren, men
+en mycket stor säkerhetskopia behöver delas upp). Neons gratisnivå har 0,5 GB lagring; etikettfoton
+sparas i databasen och tar mest plats.
+
+**Annat värdskap (Render, Railway, Fly.io, egen server):** repot har en `Dockerfile`. Skapa en
+Postgres-databas (eller använd Neon), sätt `DATABASE_URL` och övriga variabler, och starta containern.
+Den kör migreringarna och fyller en tom katalog vid start. Att flytta från Vercel går utan kodändringar:
+behåll Neon-adressen, eller flytta datan med `pg_dump`/`pg_restore`.
 
 ## Statistik och säkerhetskopior
 

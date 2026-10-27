@@ -42,6 +42,18 @@ describe("Gemini", () => {
     await expect(geminiStrukturerat({ schema: Schema, system: "", content: [] })).rejects.toThrow("tolka");
   });
 
+  it("byter modell automatiskt om den förvalda inte finns (404)", async () => {
+    const f = vi
+      .fn()
+      .mockResolvedValueOnce(svar({ error: { message: "not found" } }, 404))
+      .mockResolvedValueOnce(svar({ models: [{ name: "models/gemini-2.0-flash", supportedGenerationMethods: ["generateContent"] }, { name: "models/gemini-3.1-flash", supportedGenerationMethods: ["generateContent"] }, { name: "models/gemini-3.1-flash-lite", supportedGenerationMethods: ["generateContent"] }, { name: "models/gemini-3.1-pro", supportedGenerationMethods: ["generateContent"] }] }))
+      .mockResolvedValueOnce(svar({ candidates: [{ content: { parts: [{ text: '{"namn":"X","argang":null}' }] } }] }));
+    vi.stubGlobal("fetch", f);
+    await geminiStrukturerat({ schema: Schema, system: "", content: [] });
+    expect(f.mock.calls[1][0]).toContain("/models?pageSize");
+    expect(f.mock.calls[2][0]).toContain("/models/gemini-3.1-flash:generateContent");
+  });
+
   it("strömmar text, sökningar och källor", async () => {
     const rad = (o: unknown) => `data: ${JSON.stringify(o)}\r\n\r\n`;
     vi.stubGlobal(

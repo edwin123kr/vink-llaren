@@ -9,7 +9,42 @@ import { AiError } from "./client";
  */
 const BAS = process.env.GEMINI_API_BASE || "https://generativelanguage.googleapis.com/v1beta";
 
-export const geminiModell = () => process.env.GEMINI_MODEL || "gemini-2.5-flash";
+let vald: string | null = null;
+export const geminiModell = () => vald || process.env.GEMINI_MODEL || "gemini-2.5-flash";
+
+/**
+ * Hittar en fungerande Flash-modell genom att fråga Google vilka modeller nyckeln kan använda.
+ * Används när den förvalda modellen inte finns (404), t.ex. för att den har bytt namn eller tagits bort.
+ */
+async function valjModell(): Promise<string | null> {
+  const res = await fetch(`${BAS}/models?pageSize=200`, { headers: { "x-goog-api-key": nyckel() } }).catch(() => null);
+  if (!res?.ok) return null;
+  const j = (await res.json()) as { models?: { name: string; supportedGenerationMethods?: string[] }[] };
+  const kandidater = (j.models ?? [])
+    .filter((m) => m.supportedGenerationMethods?.includes("generateContent") && /^models\/gemini-[\d.]+-flash$/.test(m.name))
+    .map((m) => m.name.replace("models/", ""))
+    .sort((a, b) => parseFloat(b.split("-")[1]) - parseFloat(a.split("-")[1]));
+  return kandidater[0] ?? null;
+}
+
+/** Anropar Gemini; vid 404 byts modell automatiskt en gång. */
+async function anropa(metod: string, query: string, body: unknown): Promise<Response> {
+  const skicka = () =>
+    fetch(`${BAS}/models/${geminiModell()}:${metod}${query}`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": nyckel() },
+      body: JSON.stringify(body),
+    });
+  let res = await skicka();
+  if (res.status === 404) {
+    const ny = await valjModell();
+    if (ny && ny !== geminiModell()) {
+      vald = ny;
+      res = await skicka();
+    }
+  }
+  return res;
+}
 
 function nyckel() {
   const k = process.env.GEMINI_API_KEY;
@@ -28,6 +63,8 @@ export function tillDelar(content: { type: string; text?: string; source?: { med
 
 async function fel(res: Response): Promise<never> {
   const j = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
+  console.error("Gemini-fel", res.status, j?.error?.message);
+  if (res.status === 404) throw new AiError("Hittade ingen AI-modell som nyckeln får använda. Kontrollera nyckeln på aistudio.google.com.", "config");
   if (res.status === 429) throw new AiError("Gratis-AI:ns gräns är nådd för stunden. Försök igen om en stund.", "rate_limit");
   if (res.status === 400 && /API key/i.test(j?.error?.message ?? "")) throw new AiError("AI-nyckeln godkändes inte.", "config");
   if (res.status === 403) throw new AiError("AI-nyckeln saknar behörighet.", "config");
@@ -43,14 +80,10 @@ export async function geminiStrukturerat<S extends z.ZodType>(opts: {
   void _s;
   let res: Response;
   try {
-    res = await fetch(`${BAS}/models/${geminiModell()}:generateContent`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": nyckel() },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: opts.system }] },
-        contents: [{ role: "user", parts: tillDelar(opts.content) }],
-        generationConfig: { responseMimeType: "application/json", responseJsonSchema: schema, temperature: 0.3 },
-      }),
+    res = await anropa("generateContent", "", {
+      systemInstruction: { parts: [{ text: opts.system }] },
+      contents: [{ role: "user", parts: tillDelar(opts.content) }],
+      generationConfig: { responseMimeType: "application/json", responseJsonSchema: schema, temperature: 0.3 },
     });
   } catch {
     throw new AiError("Kunde inte nå AI-tjänsten.", "api");
@@ -72,15 +105,11 @@ export type GeminiHandelse = { typ: "text"; text: string } | { typ: "sok"; fraga
 export async function* geminiStrom(system: string, historik: { roll: "user" | "assistant"; text: string }[], fraga: string): AsyncGenerator<GeminiHandelse> {
   let res: Response;
   try {
-    res = await fetch(`${BAS}/models/${geminiModell()}:streamGenerateContent?alt=sse`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": nyckel() },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [...historik.slice(-20).map((m) => ({ role: m.roll === "user" ? "user" : "model", parts: [{ text: m.text }] })), { role: "user", parts: [{ text: fraga }] }],
-        tools: [{ google_search: {} }],
-        generationConfig: { temperature: 0.6 },
-      }),
+    res = await anropa("streamGenerateContent", "?alt=sse", {
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [...historik.slice(-20).map((m) => ({ role: m.roll === "user" ? "user" : "model", parts: [{ text: m.text }] })), { role: "user", parts: [{ text: fraga }] }],
+      tools: [{ google_search: {} }],
+      generationConfig: { temperature: 0.6 },
     });
   } catch {
     throw new AiError("Kunde inte nå AI-tjänsten.", "api");

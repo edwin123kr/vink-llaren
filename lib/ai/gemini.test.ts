@@ -51,7 +51,20 @@ describe("Gemini", () => {
     vi.stubGlobal("fetch", f);
     await geminiStrukturerat({ schema: Schema, system: "", content: [] });
     expect(f.mock.calls[1][0]).toContain("/models?pageSize");
-    expect(f.mock.calls[2][0]).toContain("/models/gemini-3.1-flash:generateContent");
+    expect(f.mock.calls[2][0]).toContain(":generateContent");
+  });
+
+  it("provar nästa modell när gratisgränsen är nådd (429)", async () => {
+    const f = vi
+      .fn()
+      .mockResolvedValueOnce(svar({}, 429))
+      .mockResolvedValueOnce(svar({ models: [{ name: "models/gemini-3.1-flash", supportedGenerationMethods: ["generateContent"] }, { name: "models/gemini-3.0-flash", supportedGenerationMethods: ["generateContent"] }, { name: "models/gemini-3.1-flash-lite", supportedGenerationMethods: ["generateContent"] }] }))
+      .mockResolvedValueOnce(svar({}, 429))
+      .mockResolvedValueOnce(svar({ candidates: [{ content: { parts: [{ text: '{"namn":"Y","argang":null}' }] } }] }));
+    vi.stubGlobal("fetch", f);
+    const r = await geminiStrukturerat({ schema: Schema, system: "", content: [] });
+    expect(r.namn).toBe("Y");
+    expect(f.mock.calls[3][0]).toContain("/models/gemini-3.1-flash-lite:generateContent");
   });
 
   it("strömmar text, sökningar och källor", async () => {

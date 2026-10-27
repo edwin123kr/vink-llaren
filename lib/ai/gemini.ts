@@ -12,40 +12,6 @@ const BAS = process.env.GEMINI_API_BASE || "https://generativelanguage.googleapi
 let vald: string | null = null;
 export const geminiModell = () => vald || process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
-/**
- * Hittar en fungerande Flash-modell genom att fråga Google vilka modeller nyckeln kan använda.
- * Används när den förvalda modellen inte finns (404), t.ex. för att den har bytt namn eller tagits bort.
- */
-async function valjModell(): Promise<string | null> {
-  const res = await fetch(`${BAS}/models?pageSize=200`, { headers: { "x-goog-api-key": nyckel() } }).catch(() => null);
-  if (!res?.ok) return null;
-  const j = (await res.json()) as { models?: { name: string; supportedGenerationMethods?: string[] }[] };
-  const kandidater = (j.models ?? [])
-    .filter((m) => m.supportedGenerationMethods?.includes("generateContent") && /^models\/gemini-[\d.]+-flash$/.test(m.name))
-    .map((m) => m.name.replace("models/", ""))
-    .sort((a, b) => parseFloat(b.split("-")[1]) - parseFloat(a.split("-")[1]));
-  return kandidater[0] ?? null;
-}
-
-/** Anropar Gemini; vid 404 byts modell automatiskt en gång. */
-async function anropa(metod: string, query: string, body: unknown): Promise<Response> {
-  const skicka = () =>
-    fetch(`${BAS}/models/${geminiModell()}:${metod}${query}`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": nyckel() },
-      body: JSON.stringify(body),
-    });
-  let res = await skicka();
-  if (res.status === 404) {
-    const ny = await valjModell();
-    if (ny && ny !== geminiModell()) {
-      vald = ny;
-      res = await skicka();
-    }
-  }
-  return res;
-}
-
 function nyckel() {
   const k = process.env.GEMINI_API_KEY;
   if (!k) throw new AiError("GEMINI_API_KEY saknas.", "config");
@@ -59,6 +25,54 @@ export function tillDelar(content: { type: string; text?: string; source?: { med
   return content.flatMap((b): Del[] =>
     b.type === "text" && b.text != null ? [{ text: b.text }] : b.type === "image" && b.source ? [{ inlineData: { mimeType: b.source.media_type, data: b.source.data } }] : [],
   );
+}
+
+/** Modeller som nyckeln får använda, bästa först: Flash (nyast först), sedan Flash-Lite. */
+async function modeller(): Promise<string[]> {
+  const res = await fetch(`${BAS}/models?pageSize=200`, { headers: { "x-goog-api-key": nyckel() } }).catch(() => null);
+  if (!res?.ok) return [];
+  const j = (await res.json()) as { models?: { name: string; supportedGenerationMethods?: string[] }[] };
+  const namn = (j.models ?? [])
+    .filter((m) => m.supportedGenerationMethods?.includes("generateContent"))
+    .map((m) => m.name.replace("models/", ""))
+    .filter((n) => /^gemini-[\d.]+-flash(-lite)?$/.test(n));
+  const ver = (n: string) => parseFloat(n.split("-")[1]);
+  const sortera = (l: string[]) => l.sort((x, y) => ver(y) - ver(x));
+  return [...sortera(namn.filter((n) => !n.endsWith("-lite"))), ...sortera(namn.filter((n) => n.endsWith("-lite")))];
+}
+
+/**
+ * Anropar Gemini. Finns inte modellen (404) eller är dess gratisgräns nådd (429) provas nästa tillgängliga
+ * modell, och en modell som fungerar kommer ihåg till nästa anrop. `utanSok` används som sista utväg
+ * om sökgrundningens egen gräns är slut.
+ */
+async function anropa(metod: string, query: string, body: Record<string, unknown>): Promise<Response> {
+  const skicka = (modell: string, b = body) =>
+    fetch(`${BAS}/models/${modell}:${metod}${query}`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": nyckel() },
+      body: JSON.stringify(b),
+    });
+  let res = await skicka(geminiModell());
+  if (res.ok || (res.status !== 404 && res.status !== 429)) return res;
+  const forsta = res.status;
+  for (const m of (await modeller()).filter((x) => x !== geminiModell()).slice(0, 5)) {
+    const r = await skicka(m);
+    if (r.ok) {
+      vald = m;
+      return r;
+    }
+    if (r.status !== 404 && r.status !== 429) return r;
+    res = r;
+  }
+  // sökgrundningen har egen kvot: försök en sista gång utan den
+  if (forsta === 429 && body.tools) {
+    const { tools: _t, ...utan } = body;
+    void _t;
+    const r = await skicka(geminiModell(), utan);
+    if (r.ok) return r;
+  }
+  return res;
 }
 
 async function fel(res: Response): Promise<never> {

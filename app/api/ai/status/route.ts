@@ -1,11 +1,12 @@
-import { aiMode, aiModel } from "@/lib/ai";
+import { aiMode, aiModel, aiProvider } from "@/lib/ai/client";
 
 /** Snabbkoll för ägaren: är AI påslaget och finns en nyckel? (Visar aldrig själva nyckeln.) */
 export function GET() {
   return Response.json({
     lage: aiMode(),
-    nyckel: Boolean(process.env.ANTHROPIC_API_KEY),
-    modell: aiMode() === "live" ? aiModel() : null,
+    tjanst: aiProvider(),
+    nyckel: Boolean(aiProvider() === "gemini" ? process.env.GEMINI_API_KEY : process.env.ANTHROPIC_API_KEY),
+    modell: aiMode() === "live" ? (aiProvider() === "gemini" ? process.env.GEMINI_MODEL || "gemini-2.5-flash" : aiModel()) : null,
     databas: Boolean(process.env.DATABASE_URL),
   });
 }

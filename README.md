@@ -110,6 +110,10 @@ All AI går via `lib/ai/`, och anropen sker bara på servern. Nyckeln når aldri
 - `AI_MODE="live"`: riktiga anrop. Kräver `ANTHROPIC_API_KEY` i `.env`.
 - `ANTHROPIC_MODEL` styr modellen (standard `claude-opus-5-5`).
 
+**Gratis alternativ:** sätt `AI_MODE="live"` och `GEMINI_API_KEY` (gratis nyckel från aistudio.google.com),
+så används Googles Gemini i stället för Claude (`AI_PROVIDER` styr valet, `GEMINI_MODEL` modellen).
+Gratisnivån har dagliga gränser, och Google får använda indatan för att förbättra sina tjänster.
+
 Sommeliern (`lib/ai/sommelier.ts`) strömmar svaret och har Claudes webbsökning påslagen (högst fyra
 sökningar per fråga, svenska sökresultat prioriteras). Den får en sammanfattning av användarens samling,
 smakprofil och senaste betyg (`lib/sommelierkontext.ts`), men aldrig andra användares data.

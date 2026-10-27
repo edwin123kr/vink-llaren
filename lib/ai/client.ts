@@ -2,6 +2,7 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { z } from "zod";
+import { geminiStrukturerat } from "./gemini";
 
 /**
  * Den enda platsen där Claude anropas. Körs bara på servern; nyckeln når aldrig webbläsaren.
@@ -21,6 +22,13 @@ export function kravLiveIProduktion() {
   if (aiMode() === "mock" && process.env.VERCEL) {
     throw new AiError("AI-funktionerna är inte aktiverade ännu. Fyll i uppgifterna själv så länge.", "config");
   }
+}
+
+/** Vilken AI-tjänst som används: Gemini (gratis) om AI_PROVIDER=gemini, eller om bara en Gemini-nyckel finns. */
+export function aiProvider(): "anthropic" | "gemini" {
+  if (process.env.AI_PROVIDER === "gemini") return "gemini";
+  if (process.env.AI_PROVIDER === "anthropic") return "anthropic";
+  return !process.env.ANTHROPIC_API_KEY && process.env.GEMINI_API_KEY ? "gemini" : "anthropic";
 }
 
 export function aiModel(): string {
@@ -58,6 +66,7 @@ export async function strukturerat<S extends z.ZodType>(opts: {
   effort?: "low" | "medium" | "high";
   maxTokens?: number;
 }): Promise<z.infer<S>> {
+  if (aiProvider() === "gemini") return geminiStrukturerat(opts as never);
   const c = getClient();
   try {
     const res = await c.beta.messages.parse({

@@ -85,6 +85,22 @@ async function fel(res: Response): Promise<never> {
   throw new AiError(`AI-tjänsten svarade med fel (${res.status}).`, "api");
 }
 
+/** Diagnos för ägaren: ett minimalt anrop och Googles egna svar (utan nyckeln). */
+export async function provaGemini() {
+  const res = await anropa("generateContent", "", { contents: [{ role: "user", parts: [{ text: "Svara med ordet ok." }] }] }).catch(() => null);
+  if (!res) return { ok: false, status: 0, modell: geminiModell(), meddelande: "Kunde inte nå Google." };
+  const j = (await res.json().catch(() => null)) as { error?: { message?: string; status?: string; details?: { violations?: { quotaMetric?: string; quotaId?: string }[]; retryDelay?: string }[] } } | null;
+  const violations = j?.error?.details?.flatMap((d) => d.violations ?? []) ?? [];
+  return {
+    ok: res.ok,
+    status: res.status,
+    modell: geminiModell(),
+    meddelande: res.ok ? "Fungerar" : (j?.error?.message ?? "").slice(0, 600),
+    kvoter: violations.map((v) => v.quotaId || v.quotaMetric).filter(Boolean),
+    vantaSek: j?.error?.details?.find((d) => d.retryDelay)?.retryDelay,
+  };
+}
+
 export async function geminiStrukturerat<S extends z.ZodType>(opts: {
   schema: S;
   system: string;

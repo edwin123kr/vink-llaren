@@ -5,20 +5,22 @@ import { z } from "zod";
 import { AiError, analyseraSmak } from "@/lib/ai";
 import { db } from "@/lib/db";
 import { kravAnvandare, synligaDrycker } from "@/lib/auth";
-import { kontrolleraAiKvot } from "@/lib/aikvot";
+import { angraAiAnrop, kontrolleraAiKvot } from "@/lib/aikvot";
 import { smakdata } from "@/lib/smakdata";
 
 export async function korSmakanalys(typ: "vin" | "sprit"): Promise<{ ok: true } | { ok: false; fel: string }> {
   const anv = await kravAnvandare();
   const data = await smakdata(anv.id, typ);
   if (data.antalBetyg < 3) return { ok: false, fel: "Betygsätt minst tre flaskor först." };
+  let kvot: string | null = null;
   try {
-    await kontrolleraAiKvot(anv.id, "smakanalys");
+    kvot = await kontrolleraAiKvot(anv.id, "smakanalys");
     const resultat = await analyseraSmak(data.underlag);
     await db.smakanalys.create({ data: { typ, antalBetyg: data.antalBetyg, resultat, anvandareId: anv.id } });
     revalidatePath("/smakprofil");
     return { ok: true };
   } catch (e) {
+    await angraAiAnrop(kvot);
     if (e instanceof AiError) return { ok: false, fel: e.message };
     throw e;
   }

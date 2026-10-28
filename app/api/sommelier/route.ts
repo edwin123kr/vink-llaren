@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { EJ_INLOGGAD, hamtaAnvandare } from "@/lib/auth";
-import { kontrolleraAiKvot } from "@/lib/aikvot";
+import { angraAiAnrop, kontrolleraAiKvot } from "@/lib/aikvot";
 import { AiError } from "@/lib/ai";
 import { fragaSommelier, type Kalla } from "@/lib/ai/sommelier";
 import { sommelierKontext } from "@/lib/sommelierkontext";
@@ -20,8 +20,9 @@ export async function POST(req: Request) {
 
   let samtal = p.data.samtalId ? await db.samtal.findFirst({ where: { id: p.data.samtalId, anvandareId: anv.id } }) : null;
   const historik = samtal ? await db.meddelande.findMany({ where: { samtalId: samtal.id }, orderBy: { skapad: "asc" }, select: { roll: true, text: true } }) : [];
+  let kvot: string | null = null;
   try {
-    await kontrolleraAiKvot(anv.id, "sommelier");
+    kvot = await kontrolleraAiKvot(anv.id, "sommelier");
   } catch (e) {
     if (e instanceof AiError) return Response.json({ fel: e.message }, { status: 429 });
     throw e;
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
         }
         skicka({ typ: "klar" });
       } catch (e) {
+        if (!text.trim()) await angraAiAnrop(kvot);
         if (text.trim()) await db.meddelande.create({ data: { samtalId, roll: "assistant", text: text + "\n\n*(Svaret avbröts.)*" } });
         skicka({ typ: "fel", text: e instanceof AiError ? e.message : "Något gick fel. Försök igen." });
         if (!(e instanceof AiError)) console.error(e);

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { AiError, planeraProvning, type Provningsforslag } from "@/lib/ai";
 import { db } from "@/lib/db";
 import { kravAnvandare, synligaDrycker } from "@/lib/auth";
-import { kontrolleraAiKvot } from "@/lib/aikvot";
+import { angraAiAnrop, kontrolleraAiKvot } from "@/lib/aikvot";
 import { kalkyl } from "@/lib/provning";
 import { hamtaBetygade } from "@/lib/smakdata";
 import { grupper } from "@/lib/smak";
@@ -26,8 +26,9 @@ export async function skapaProvning(input: unknown): Promise<{ ok: true; id: str
   const anv = await kravAnvandare();
   const k = kalkyl(p.data);
   const favoriter = grupper((await hamtaBetygade(anv.id)).filter((d) => d.typ === "vin" && d.snitt >= 70), (d) => d.druvor).slice(0, 4).map((g) => g.namn);
+  let kvot: string | null = null;
   try {
-    await kontrolleraAiKvot(anv.id, "provning");
+    kvot = await kontrolleraAiKvot(anv.id, "provning");
     const forslag = await planeraProvning({
       deltagare: k.deltagare,
       antalViner: k.antalViner,
@@ -53,6 +54,7 @@ export async function skapaProvning(input: unknown): Promise<{ ok: true; id: str
     revalidatePath("/provning");
     return { ok: true, id: ny.id };
   } catch (e) {
+    await angraAiAnrop(kvot);
     if (e instanceof AiError) return { ok: false, fel: { _: e.message } };
     throw e;
   }

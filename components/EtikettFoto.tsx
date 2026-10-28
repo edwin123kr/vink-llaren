@@ -13,6 +13,8 @@ interface Svar {
   sakerhet: "hog" | "medel" | "lag";
   lastText: string;
   bildUrl: string;
+  osakraFalt?: string[];
+  franKatalog?: string[];
   traffar: { id: string; namn: string; producent: string | null; kategori: string; argang: number | null }[];
   [k: string]: unknown;
 }
@@ -90,6 +92,12 @@ export function EtikettFoto({ ean }: { ean?: string }) {
               <span className="chip">{SAKERHET[svar.sakerhet]}</span>
               <button type="button" className="ml-auto text-sm text-gold underline-offset-4 hover:underline" onClick={() => { setStatus(""); setForhand(null); }}>Ta nytt foto</button>
             </div>
+            {svar.franKatalog && svar.franKatalog.length > 0 && (
+              <p className="text-sm text-muted">Kompletterat från katalogen: {svar.franKatalog.join(", ")}.</p>
+            )}
+            {svar.osakraFalt && svar.osakraFalt.length > 0 && (
+              <p className="rounded-xl border border-gold/60 bg-gold/10 p-3 text-sm">Kontrollera de markerade fälten nedan: vår sommelier var osäker på {svar.osakraFalt.length === 1 ? "ett fält" : `${svar.osakraFalt.length} fält`}.</p>
+            )}
             {svar.lastText && <p className="text-sm text-muted">Läst på etiketten: <q>{svar.lastText}</q></p>}
             {svar.traffar.length > 0 && (
               <div>
@@ -108,7 +116,7 @@ export function EtikettFoto({ ean }: { ean?: string }) {
               </div>
             )}
           </section>
-          <NyFlaskaForm init={init} ai />
+          <NyFlaskaForm init={init} ai osakra={svar.osakraFalt} />
         </>
       )}
     </div>

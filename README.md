@@ -114,6 +114,12 @@ All AI går via `lib/ai/`, och anropen sker bara på servern. Nyckeln når aldri
 så används Googles Gemini i stället för Claude (`AI_PROVIDER` styr valet, `GEMINI_MODEL` modellen).
 Gratisnivån har dagliga gränser, och Google får använda indatan för att förbättra sina tjänster.
 
+**Etikettläsning:** instruktionerna till AI:n innehåller en vinguide (`lib/ai/vinguide.ts`) om hur etiketter
+läses och vilka termer som betyder vad. AI:n anger vilka fält den är osäker på; de markeras med
+"Kontrollera" i formuläret tills du ändrar dem. Hittar appen samma vin i katalogen kompletteras tomma
+och osäkra uppgifter (druvor, land, region, alkohol, volym, smakprofil) därifrån (`lib/berika.ts`);
+årgång och namn ändras aldrig. AI-ifyllning får liknande katalogdrycker som underlag.
+
 Sommeliern (`lib/ai/sommelier.ts`) strömmar svaret och har Claudes webbsökning påslagen (högst fyra
 sökningar per fråga, svenska sökresultat prioriteras). Den får en sammanfattning av användarens samling,
 smakprofil och senaste betyg (`lib/sommelierkontext.ts`), men aldrig andra användares data.

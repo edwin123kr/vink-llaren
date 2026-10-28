@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AiError, fyllDryck } from "@/lib/ai";
+import { sokKatalog } from "@/lib/katalog";
 import { EJ_INLOGGAD, hamtaAnvandare } from "@/lib/auth";
 import { angraAiAnrop, kontrolleraAiKvot } from "@/lib/aikvot";
 
@@ -13,7 +14,9 @@ export async function POST(req: Request) {
   let kvot: string | null = null;
   try {
     kvot = await kontrolleraAiKvot(anv.id, "fyll");
-    return Response.json(await fyllDryck(parsed.data.beskrivning));
+    const lika = await sokKatalog(anv.id, parsed.data.beskrivning, { limit: 4 });
+    const underlag = lika.length ? lika.map((t) => `- ${[t.namn, t.argang, t.producent, [t.region, t.land].filter(Boolean).join(", ")].filter(Boolean).join(" | ")}`).join("\n") : undefined;
+    return Response.json(await fyllDryck(parsed.data.beskrivning, underlag));
   } catch (e) {
     await angraAiAnrop(kvot);
     if (e instanceof AiError) return Response.json({ fel: e.message, typ: e.kind }, { status: e.kind === "rate_limit" ? 429 : 502 });

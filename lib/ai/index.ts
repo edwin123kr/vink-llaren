@@ -1,5 +1,6 @@
 import "server-only";
 import { aiMode, kravLiveIProduktion, strukturerat } from "./client";
+import { VINGUIDE } from "./vinguide";
 import { mockDryckForslag, mockEtikett, mockProvning, mockSmakanalys } from "./mock";
 import { DryckForslag, EtikettSvar, Provningsforslag, Smakanalys } from "./schemas";
 
@@ -11,16 +12,18 @@ export type { DryckForslag, EtikettSvar, Provningsforslag, Smakanalys } from "./
 const SYSTEM_DRYCK = `Du är en kunnig sommelier och spritexpert som hjälper en svensk användare att katalogisera sin vin- och spritsamling.
 Svara alltid på svenska. Fyll bara i uppgifter du har god grund för; använd null eller tomma listor hellre än att gissa.
 Smakprofilen anges på skalan 0–12 som Systembolagets smakklockor. Rökighet används främst för sprit; strävhet och syra främst för vin.
-Pris anges i svenska kronor och bara om du har en rimlig uppfattning om nivån.`;
+Pris anges i svenska kronor och bara om du har en rimlig uppfattning om nivån.
+
+${VINGUIDE}`;
 
 /** Fyll i uppgifter om en dryck utifrån namn, producent med mera (fas 3 bygger UI:t). */
-export async function fyllDryck(beskrivning: string): Promise<DryckForslag & { lage: "mock" | "live" }> {
+export async function fyllDryck(beskrivning: string, underlag?: string): Promise<DryckForslag & { lage: "mock" | "live" }> {
   kravLiveIProduktion();
   if (aiMode() === "mock") return { ...mockDryckForslag(beskrivning), lage: "mock" };
   const svar = await strukturerat({
     schema: DryckForslag,
     system: SYSTEM_DRYCK,
-    content: [{ type: "text", text: `Fyll i uppgifter om den här drycken:\n${beskrivning}` }],
+    content: [{ type: "text", text: `Fyll i uppgifter om den här drycken:\n${beskrivning}${underlag ? `\n\nLiknande drycker som redan finns i katalogen (använd dem som stöd, men kopiera inte blint; drycken kan vara en annan årgång eller producent):\n${underlag}` : ""}` }],
   });
   return { ...svar, lage: "live" };
 }
@@ -38,7 +41,7 @@ export async function identifieraEtikett(base64: string, mediaType: BildTyp): Pr
       { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
       {
         type: "text",
-        text: "Identifiera flaskan på bilden. Läs etiketten noga: namn, producent, årgång, alkoholhalt, volym, land och region. Fyll sedan i druva/råvara, smakprofil, dofter och mat utifrån vad du vet om produkten eller stilen. Om bilden inte visar en vin- eller spritflaska, sätt arDryck till false.",
+        text: "Identifiera flaskan på bilden. Läs etiketten noga: namn, producent, årgång, alkoholhalt, volym, land och region. Fyll sedan i druva/råvara, smakprofil, dofter och mat utifrån vad du vet om produkten eller stilen. Lista i osakraFalt allt du gissat eller inte kunnat läsa tydligt. Om bilden inte visar en vin- eller spritflaska, sätt arDryck till false.",
       },
     ],
   });

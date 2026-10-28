@@ -16,7 +16,7 @@ export function mockDryckForslag(hint: string): DryckForslag {
       namn: hint.trim(), producent: null, kategori, druvor: [], land: null, region: null, argang: null, alkoholhalt: 40, volymMl: 700,
       fyllighet: 7, sotma: 3, syra: null, stravhet: null, rokighet: kategori === "whisky" ? 4 : 0,
       aromer: kategori === "gin" ? ["enbär", "citrus"] : ["vanilj", "torkad frukt"], mat: kategori === "gin" ? ["drinkar"] : ["mörk choklad"],
-      beskrivning: "", prisCa: null, sakerhet: "lag",
+      beskrivning: "", prisCa: null, sakerhet: "lag", osakraFalt: [],
     };
   }
   const kategori = /vit|blanc|riesling|chardonnay|sauvignon/.test(h) ? "vitt" : /rosé|rose/.test(h) ? "rose" : /champagne|cava|prosecco|crémant|mousser/.test(h) ? "mousserande" : "rott";
@@ -25,7 +25,7 @@ export function mockDryckForslag(hint: string): DryckForslag {
     namn: hint.trim(), producent: null, kategori, druvor: [], land: null, region: null, argang: null, alkoholhalt: rott ? 13.5 : 12, volymMl: 750,
     fyllighet: rott ? 7 : 5, sotma: 2, syra: rott ? 7 : 8, stravhet: rott ? 7 : 1, rokighet: null,
     aromer: rott ? ["mörka bär", "kryddor"] : ["citrus", "gröna äpplen"], mat: rott ? ["kött", "lagrad ost"] : ["fisk", "skaldjur"],
-    beskrivning: "", prisCa: null, sakerhet: "lag",
+    beskrivning: "", prisCa: null, sakerhet: "lag", osakraFalt: [],
   };
 }
 

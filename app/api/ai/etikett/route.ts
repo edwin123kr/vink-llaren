@@ -1,6 +1,9 @@
 import { AiError, identifieraEtikett, type BildTyp } from "@/lib/ai";
 import { sparaBild } from "@/lib/bilder";
 import { sokKatalog } from "@/lib/katalog";
+import { db } from "@/lib/db";
+import { berika, hittaSamma } from "@/lib/berika";
+import { synligaDrycker } from "@/lib/auth";
 import { EJ_INLOGGAD, hamtaAnvandare } from "@/lib/auth";
 import { angraAiAnrop, kontrolleraAiKvot } from "@/lib/aikvot";
 
@@ -36,7 +39,15 @@ export async function POST(req: Request) {
     const svar = await identifieraEtikett(data.toString("base64"), fil.type as BildTyp);
     if (!svar.arDryck) return Response.json({ fel: "Det gick inte att hitta en vin- eller spritetikett på bilden. Prova att fota närmare och rakt framifrån.", bildUrl }, { status: 422 });
     const traffar = svar.lage === "live" ? await matcha(anv.id, svar.namn, svar.producent, svar.argang) : [];
-    return Response.json({ ...svar, bildUrl, traffar });
+    // samma vin i katalogen? komplettera tomma och osäkra uppgifter därifrån
+    let ut = svar;
+    let franKatalog: string[] = [];
+    if (svar.lage === "live" && traffar.length) {
+      const full = await db.dryck.findMany({ where: { id: { in: traffar.map((t) => t.id) }, ...synligaDrycker(anv.id) } });
+      const samma = hittaSamma(svar, full);
+      ({ svar: ut, fran: franKatalog } = berika(svar, samma));
+    }
+    return Response.json({ ...ut, bildUrl, traffar, franKatalog });
   } catch (e) {
     await angraAiAnrop(kvot);
     if (e instanceof AiError) return Response.json({ fel: e.message, typ: e.kind, bildUrl }, { status: e.kind === "rate_limit" ? 429 : 502 });

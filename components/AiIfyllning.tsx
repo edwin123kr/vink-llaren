@@ -8,7 +8,7 @@ import { Icon } from "./Icon";
  * "Låt Claude fylla i": skickar namn, producent och årgång till servern och fyller i tomma fält.
  * Fält du redan har fyllt i skrivs aldrig över. Allt går att ändra innan du sparar.
  */
-export function AiIfyllning({ d, satt }: { d: DryckState; satt: (p: Partial<DryckState>) => void }) {
+export function AiIfyllning({ d, satt }: { d: DryckState; satt: (p: Partial<DryckState>, osakra?: string[]) => void }) {
   const [status, setStatus] = useState<"" | "laddar" | "klar" | "fel">("");
   const [meddelande, setMeddelande] = useState("");
 
@@ -34,7 +34,7 @@ export function AiIfyllning({ d, satt }: { d: DryckState; satt: (p: Partial<Dryc
         if ((nu === "" || (k === "volymMl" && nu === "750")) && typeof ny === "string" && ny !== "") (patch as Record<string, unknown>)[k] = ny;
       });
       if (patch.prisCa) patch.prisUppskattat = true;
-      satt(patch);
+      satt(patch, Array.isArray(j.osakraFalt) ? j.osakraFalt : []);
       setStatus("klar");
       const n = Object.keys(patch).filter((k) => k !== "prisUppskattat").length;
       setMeddelande(n ? `Vår sommelier fyllde i ${n} fält. Granska och ändra innan du sparar.` : "Inga tomma fält att fylla i.");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { KATEGORIER, SMAK, typFor } from "@/lib/kategorier";
 import { parseDecimal } from "@/lib/format";
@@ -24,10 +24,17 @@ const int = (s: string) => {
 };
 
 /* ---------------- fältkomponenter ---------------- */
+/** Fält som AI:n gissat eller var osäker på. De markeras tills användaren ändrar dem. */
+const OsakraCtx = createContext<Set<string>>(new Set());
+
 function Falt({ id, label, fel, hjalp, children, className = "" }: { id: string; label: string; fel?: string; hjalp?: string; children: ReactNode; className?: string }) {
+  const osaker = useContext(OsakraCtx).has(id.replace(/^d-/, ""));
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium">{label}</label>
+      <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
+        {label}
+        {osaker && <span className="ml-2 rounded-full border border-gold px-2 py-0.5 text-xs font-semibold text-gold">Kontrollera</span>}
+      </label>
       {children}
       {hjalp && !fel && <p id={`${id}-hjalp`} className="mt-1 text-xs text-muted">{hjalp}</p>}
       {fel && <p id={`${id}-fel`} className="mt-1 text-sm text-danger">{fel}</p>}
@@ -47,6 +54,7 @@ export function DryckForm({
   spara,
   sammanfattning,
   verktyg,
+  osakraInit = [],
   sparaText = "Spara flaskan",
   aiFran = false,
 }: {
@@ -59,21 +67,28 @@ export function DryckForm({
   /** formuläret startar med AI-uppgifter (t.ex. från ett etikettfoto) */
   aiFran?: boolean;
   sammanfattning?: ReactNode;
-  /** t.ex. AI-ifyllning; får ett sätt att uppdatera drycken */
-  verktyg?: (d: DryckState, satt: (patch: Partial<DryckState>) => void) => ReactNode;
+  /** t.ex. AI-ifyllning; får ett sätt att uppdatera drycken (och markera fält som AI:n var osäker på) */
+  verktyg?: (d: DryckState, satt: (patch: Partial<DryckState>, osakra?: string[]) => void) => ReactNode;
+  /** fält som AI:n var osäker på från början (t.ex. efter ett etikettfoto) */
+  osakraInit?: string[];
   sparaText?: string;
 }) {
   const [d, setD] = useState<DryckState>(dryckInit);
   const [f, setF] = useState<FlaskaState>(flaskaInit ?? tomFlaska());
   const [fel, setFel] = useState<FaltFel>({});
   const [ai, setAi] = useState(aiFran);
+  const [osakra, setOsakra] = useState<Set<string>>(() => new Set(osakraInit));
   const [pending, start] = useTransition();
   const router = useRouter();
   const felRuta = useRef<HTMLDivElement>(null);
   const visaDryck = lage !== "katalog";
   const sprit = typFor(d.kategori) === "sprit";
 
-  const sd = (patch: Partial<DryckState>) => setD((p) => ({ ...p, ...patch }));
+  const sd = (patch: Partial<DryckState>) => {
+    setD((p) => ({ ...p, ...patch }));
+    // en markering försvinner när du själv ändrar fältet
+    setOsakra((s) => (Object.keys(patch).some((k) => s.has(k)) ? new Set([...s].filter((k) => !(k in patch))) : s));
+  };
   const sf = (patch: Partial<FlaskaState>) => setF((p) => ({ ...p, ...patch }));
 
   const skicka = (e: React.FormEvent) => {
@@ -103,6 +118,7 @@ export function DryckForm({
   );
 
   return (
+    <OsakraCtx.Provider value={osakra}>
     <form onSubmit={skicka} noValidate className="flex flex-col gap-6">
       {felLista.length > 0 && (
         <div ref={felRuta} tabIndex={-1} role="alert" className="rounded-2xl border border-danger/60 bg-danger/10 p-4 outline-none">
@@ -121,9 +137,10 @@ export function DryckForm({
 
       {visaDryck && (
         <>
-          {verktyg?.(d, (p) => {
+          {verktyg?.(d, (p, ok) => {
             setAi(true);
             sd(p);
+            if (ok?.length) setOsakra((s) => new Set([...s, ...ok.filter((k) => k in p)]));
           })}
           <fieldset className="card grid gap-4 p-5 sm:grid-cols-2">
             <legend className="display px-1 text-2xl">Drycken</legend>
@@ -225,5 +242,6 @@ export function DryckForm({
         </button>
       </div>
     </form>
+    </OsakraCtx.Provider>
   );
 }

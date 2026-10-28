@@ -24,6 +24,9 @@ export const DryckForslag = z.object({
   beskrivning: z.string().describe("2–3 meningar på svenska"),
   prisCa: z.number().int().nullable().describe("Ungefärligt pris i svenska kronor, eller null om du inte vet"),
   sakerhet: z.enum(["hog", "medel", "lag"]).describe("Hur säker identifieringen och uppgifterna är"),
+  osakraFalt: z
+    .array(z.enum(["namn", "producent", "kategori", "druvor", "land", "region", "argang", "alkoholhalt", "volymMl"]))
+    .describe("Fält som du har gissat eller härlett i stället för att läsa av etiketten, eller där texten är oläslig"),
 });
 export type DryckForslag = z.infer<typeof DryckForslag>;
 

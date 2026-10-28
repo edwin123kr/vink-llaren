@@ -53,8 +53,10 @@ async function anropa(metod: string, query: string, body: Record<string, unknown
       headers: { "content-type": "application/json", "x-goog-api-key": nyckel() },
       body: JSON.stringify(b),
     });
+  // 404 = modellen finns inte, 429 = gratisgränsen nådd, 500/503 = Google är överbelastat just nu
+  const provaNasta = (s: number) => s === 404 || s === 429 || s === 500 || s === 503;
   let res = await skicka(geminiModell());
-  if (res.ok || (res.status !== 404 && res.status !== 429)) return res;
+  if (res.ok || !provaNasta(res.status)) return res;
   const forsta = res.status;
   for (const m of (await modeller()).filter((x) => x !== geminiModell()).slice(0, 5)) {
     const r = await skicka(m);
@@ -62,8 +64,14 @@ async function anropa(metod: string, query: string, body: Record<string, unknown
       vald = m;
       return r;
     }
-    if (r.status !== 404 && r.status !== 429) return r;
+    if (!provaNasta(r.status)) return r;
     res = r;
+  }
+  // överbelastning går ofta över på någon sekund: en sista omgång på den förvalda modellen
+  if (forsta === 503 || forsta === 500) {
+    await new Promise((r) => setTimeout(r, 1500));
+    const r = await skicka(geminiModell());
+    if (r.ok || !provaNasta(r.status)) return r;
   }
   // sökgrundningen har egen kvot: försök en sista gång utan den
   if (forsta === 429 && body.tools) {
@@ -79,6 +87,7 @@ async function fel(res: Response): Promise<never> {
   const j = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
   console.error("Gemini-fel", res.status, j?.error?.message);
   if (res.status === 404) throw new AiError("Hittade ingen AI-modell som nyckeln får använda. Kontrollera nyckeln på aistudio.google.com.", "config");
+  if (res.status === 503 || res.status === 500) throw new AiError("Googles AI är överbelastad just nu. Försök igen om en stund.", "rate_limit");
   if (res.status === 429) throw new AiError("Gratis-AI:ns gräns är nådd för stunden. Försök igen om en stund.", "rate_limit");
   if (res.status === 400 && /API key/i.test(j?.error?.message ?? "")) throw new AiError("AI-nyckeln godkändes inte.", "config");
   if (res.status === 403) throw new AiError("AI-nyckeln saknar behörighet.", "config");

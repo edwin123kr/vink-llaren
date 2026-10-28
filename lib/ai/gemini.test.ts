@@ -67,6 +67,18 @@ describe("Gemini", () => {
     expect(f.mock.calls[3][0]).toContain("/models/gemini-3.1-flash-lite:generateContent");
   });
 
+  it("provar andra modeller när Google är överbelastat (503)", async () => {
+    const f = vi
+      .fn()
+      .mockResolvedValueOnce(svar({ error: { message: "high demand" } }, 503))
+      .mockResolvedValueOnce(svar({ models: [{ name: "models/gemini-3.0-flash", supportedGenerationMethods: ["generateContent"] }] }))
+      .mockResolvedValueOnce(svar({ candidates: [{ content: { parts: [{ text: '{"namn":"Z","argang":null}' }] } }] }));
+    vi.stubGlobal("fetch", f);
+    expect((await geminiStrukturerat({ schema: Schema, system: "", content: [] })).namn).toBe("Z");
+    f.mockReset().mockResolvedValue(svar({ error: { message: "high demand" } }, 503));
+    await expect(geminiStrukturerat({ schema: Schema, system: "", content: [] })).rejects.toThrow("överbelastad");
+  }, 20000);
+
   it("strömmar text, sökningar och källor", async () => {
     const rad = (o: unknown) => `data: ${JSON.stringify(o)}\r\n\r\n`;
     vi.stubGlobal(

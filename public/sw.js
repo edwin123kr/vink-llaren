@@ -3,7 +3,7 @@
  *  - Byggfiler (/_next/static) och ikoner: cache först, de har unika namn.
  *  - Bilder (/api/bild): cache först med uppdatering i bakgrunden.
  *  - Allt som skriver (POST m.m.) går alltid till nätet. */
-const VERSION = "vk-v2";
+const VERSION = "vk-v3";
 const SIDOR = `${VERSION}-sidor`;
 const STATISKT = `${VERSION}-statiskt`;
 const BILDER = `${VERSION}-bilder`;
@@ -27,21 +27,20 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-async function natetForst(req, fallbackOffline) {
+const arHtml = (res) => (res.headers.get("content-type") || "").includes("text/html");
+
+/** Sidor: nätet först, sparad kopia om nätet saknas. Bara riktiga HTML-sidor sparas (aldrig Nexts interna sidodata). */
+async function natetForst(req) {
   const cache = await caches.open(SIDOR);
   try {
     const res = await fetch(req);
     // spara inte omdirigeringar (t.ex. till inloggningen) som om de vore sidan
-    if (res.ok && res.type === "basic" && !res.redirected) cache.put(req, res.clone());
+    if (res.ok && res.type === "basic" && !res.redirected && arHtml(res)) cache.put(req.url, res.clone());
     return res;
   } catch {
-    // RSC-data (klientnavigering) måste matcha exakt; annars faller Next tillbaka på vanlig sidladdning,
-    // som då kan serveras från de sparade sidorna.
-    const rsc = req.headers.get("RSC") === "1";
-    const sparad = (await cache.match(req)) || (rsc ? null : await cache.match(req, { ignoreSearch: true, ignoreVary: true }));
-    if (sparad) return sparad;
-    if (fallbackOffline) return (await cache.match("/offline")) || Response.error();
-    return Response.error();
+    const sparad = await cache.match(req.url, { ignoreSearch: true, ignoreVary: true });
+    if (sparad && arHtml(sparad)) return sparad;
+    return (await cache.match("/offline")) || Response.error();
   }
 }
 
@@ -65,6 +64,8 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/_next/webpack-hmr") || url.pathname === "/sw.js") return;
+  // Nexts interna sidodata (klientnavigering) rörs aldrig: samma adress kan ge både HTML och data
+  if (req.headers.get("RSC") || url.searchParams.has("_rsc")) return;
   // exporten ska alltid vara färsk
   if (url.pathname.startsWith("/api/export") || url.pathname.startsWith("/api/ai")) return;
 
@@ -73,10 +74,9 @@ self.addEventListener("fetch", (e) => {
   } else if (url.pathname.startsWith("/api/bild/")) {
     e.respondWith(cacheForst(req, BILDER, true));
   } else if (req.mode === "navigate") {
-    e.respondWith(natetForst(req, true));
-  } else {
-    e.respondWith(natetForst(req, false));
+    e.respondWith(natetForst(req));
   }
+  // allt annat (inklusive Nexts sidodata för klientnavigering) går orört till nätet
 });
 
 /* Appen skickar sina viktigaste sidor (och flaskorna i samlingen) så att de finns offline
@@ -92,7 +92,7 @@ self.addEventListener("message", (e) => {
       for (const u of urls.slice(0, 200)) {
         try {
           const res = await fetch(u, { credentials: "same-origin" });
-          if (!res.ok || res.redirected) continue;
+          if (!res.ok || res.redirected || !arHtml(res)) continue;
           // sidans JS och CSS behövs också för att den ska fungera offline
           const html = await res.clone().text();
           for (const m of html.matchAll(/\/_next\/static\/[^"'\s)\\]+/g)) filer.add(m[0]);
